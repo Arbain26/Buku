@@ -1,0 +1,432 @@
+// Prisma Schema for MABBACA - Platform Ekosistem Literasi Masyarakat Sidrap
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  MITRA
+  ADMIN
+}
+
+enum MitraType {
+  TOKO_BUKU
+  PERPUSTAKAAN
+  KOMUNITAS
+  SEKOLAH
+  PENGAJAR
+}
+
+enum MitraStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum EventCategory {
+  BEDAH_BUKU
+  DISKUSI
+  LAPAK_BACA
+  KELAS_MENULIS
+  PELATIHAN
+  PAMERAN
+  FESTIVAL_LITERASI
+}
+
+enum AudienceType {
+  ANAK
+  REMAJA
+  DEWASA
+  UMUM
+}
+
+enum EventStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+enum BorrowStatus {
+  PENDING
+  APPROVED
+  BORROWED
+  RETURNED
+  OVERDUE
+  REJECTED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id              Int               @id @default(autoincrement())
+  name            String
+  email           String            @unique
+  password        String
+  phone           String?
+  role            Role              @default(USER)
+  avatar          String?
+  bio             String?           @db.Text
+  locationAddress String?
+  district        String?           // Kecamatan di Sidrap
+  latitude        Float?
+  longitude       Float?
+  points          Int               @default(0)
+  level           String            @default("Pembaca Pemula")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  mitraProfile    MitraProfile?
+  articles        Article[]
+  reviews         Review[]
+  favorites       Favorite[]
+  borrowings      Borrowing[]
+  orders          Order[]
+  eventJoins      EventParticipant[]
+  communityJoins  CommunityMember[]
+  notifications   Notification[]
+  activities      UserActivity[]
+  userMissions    UserMission[]
+
+  @@map("users")
+}
+
+model MitraProfile {
+  id               Int                @id @default(autoincrement())
+  userId           Int                @unique
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mitraType        MitraType
+  organizationName String
+  slug             String             @unique
+  address          String             @db.Text
+  district         String             // Kecamatan: Pangkajene, Maritengngae, Baranti, Watang Pulu, dll
+  village          String?            // Kelurahan / Desa
+  latitude         Float
+  longitude        Float
+  phoneWa          String
+  description      String             @db.Text
+  logo             String?
+  banner           String?
+  status           MitraStatus        @default(PENDING)
+  openHours        String?
+  verifiedAt       DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  products         StoreProduct[]
+  collections      LibraryCollection[]
+  communityMembers CommunityMember[]
+  events           Event[]
+  orders           Order[]
+
+  @@map("mitra_profiles")
+}
+
+model BookCategory {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  slug        String    @unique
+  description String?   @db.Text
+  icon        String?
+  books       Book[]
+
+  @@map("book_categories")
+}
+
+model Book {
+  id          Int           @id @default(autoincrement())
+  title       String
+  slug        String        @unique
+  author      String
+  publisher   String?
+  isbn        String?
+  publishYear Int?
+  pages       Int?
+  language    String?       @default("Bahasa Indonesia")
+  description String        @db.Text
+  coverImage  String?
+  rating      Float         @default(0.0)
+  reviewCount Int           @default(0)
+  categoryId  Int
+  category    BookCategory  @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  storeProducts      StoreProduct[]
+  libraryCollections LibraryCollection[]
+  reviews            Review[]
+  favorites          Favorite[]
+
+  @@map("books")
+}
+
+model StoreProduct {
+  id          Int           @id @default(autoincrement())
+  storeId     Int
+  store       MitraProfile  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  bookId      Int
+  book        Book          @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  price       Decimal       @db.Decimal(12, 2)
+  stock       Int           @default(0)
+  isAvailable Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  orderItems  OrderItem[]
+
+  @@unique([storeId, bookId])
+  @@map("store_products")
+}
+
+model LibraryCollection {
+  id             Int           @id @default(autoincrement())
+  libraryId      Int
+  library        MitraProfile  @relation(fields: [libraryId], references: [id], onDelete: Cascade)
+  bookId         Int
+  book           Book          @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  callNumber     String?
+  totalStock     Int           @default(1)
+  availableStock Int           @default(1)
+  locationShelf  String?
+  category       String?       // Anak, Pendidikan, Agama, Pertanian, Novel, Umum
+  isAvailable    Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  borrowings     Borrowing[]
+
+  @@unique([libraryId, bookId])
+  @@map("library_collections")
+}
+
+model CommunityMember {
+  id          Int           @id @default(autoincrement())
+  communityId Int
+  community   MitraProfile  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  userId      Int
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        String        @default("ANGGOTA") // PENGURUS, ANGGOTA
+  joinedAt    DateTime      @default(now())
+
+  @@unique([communityId, userId])
+  @@map("community_members")
+}
+
+model Event {
+  id                  Int               @id @default(autoincrement())
+  mitraId             Int
+  mitra               MitraProfile      @relation(fields: [mitraId], references: [id], onDelete: Cascade)
+  title               String
+  slug                String            @unique
+  description         String            @db.Text
+  banner              String?
+  eventDate           DateTime
+  startTime           String
+  endTime             String
+  locationName        String
+  address             String            @db.Text
+  district            String            // Kecamatan di Sidrap
+  latitude            Float?
+  longitude           Float?
+  category            EventCategory     @default(DISKUSI)
+  audience            AudienceType      @default(UMUM)
+  quota               Int               @default(50)
+  currentParticipants Int               @default(0)
+  isFree              Boolean           @default(true)
+  price               Decimal?          @db.Decimal(10, 2)
+  status              EventStatus       @default(UPCOMING)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  participants        EventParticipant[]
+
+  @@map("events")
+}
+
+model EventParticipant {
+  id           Int       @id @default(autoincrement())
+  eventId      Int
+  event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId       Int
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status       String    @default("REGISTERED") // REGISTERED, ATTENDED, CANCELLED
+  registeredAt DateTime  @default(now())
+
+  @@unique([eventId, userId])
+  @@map("event_participants")
+}
+
+model ArticleCategory {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  slug     String    @unique
+  articles Article[]
+
+  @@map("article_categories")
+}
+
+model Article {
+  id              Int              @id @default(autoincrement())
+  authorId        Int
+  author          User             @relation(fields: [authorId], references: [id])
+  categoryId      Int
+  category        ArticleCategory  @relation(fields: [categoryId], references: [id])
+  title           String
+  slug            String           @unique
+  thumbnail       String?
+  excerpt         String           @db.Text
+  content         String           @db.LongText
+  readTimeMinutes Int              @default(5)
+  views           Int              @default(0)
+  isFeatured      Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@map("articles")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId    Int
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  rating    Int
+  comment   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, bookId])
+  @@map("reviews")
+}
+
+model Favorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId    Int
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, bookId])
+  @@map("favorites")
+}
+
+model Borrowing {
+  id           Int                @id @default(autoincrement())
+  userId       Int
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collectionId Int
+  collection   LibraryCollection  @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  borrowDate   DateTime           @default(now())
+  dueDate      DateTime
+  returnDate   DateTime?
+  status       BorrowStatus       @default(PENDING)
+  notes        String?            @db.Text
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@map("borrowings")
+}
+
+model Order {
+  id              Int          @id @default(autoincrement())
+  userId          Int?
+  user            User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  storeId         Int
+  store           MitraProfile @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderNumber     String       @unique
+  totalAmount     Decimal      @db.Decimal(12, 2)
+  status          OrderStatus  @default(PENDING)
+  customerName    String
+  customerPhone   String
+  customerAddress String?      @db.Text
+  waMessageSent   Boolean      @default(true)
+  notes           String?      @db.Text
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  items           OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        Int          @id @default(autoincrement())
+  orderId   Int
+  order     Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId Int
+  product   StoreProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int          @default(1)
+  unitPrice Decimal      @db.Decimal(12, 2)
+  subtotal  Decimal      @db.Decimal(12, 2)
+
+  @@map("order_items")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String   @db.Text
+  type      String   @default("INFO") // INFO, SUCCESS, WARNING, PROMO
+  isRead    Boolean  @default(false)
+  linkUrl   String?
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model UserActivity {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  actionType   String   // READ_ARTICLE, BORROW_BOOK, JOIN_EVENT, WRITE_REVIEW, BUY_BOOK
+  referenceId  Int?
+  pointsEarned Int      @default(0)
+  description  String
+  createdAt    DateTime @default(now())
+
+  @@map("user_activities")
+}
+
+model Mission {
+  id               Int           @id @default(autoincrement())
+  title            String
+  description      String
+  pointsReward     Int           @default(10)
+  type             String        @default("DAILY") // DAILY, ONCE
+  requirementCount Int           @default(1)
+  createdAt        DateTime      @default(now())
+
+  userMissions     UserMission[]
+
+  @@map("missions")
+}
+
+model UserMission {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  missionId    Int
+  mission      Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  currentCount Int       @default(0)
+  isCompleted  Boolean   @default(false)
+  completedAt  DateTime?
+
+  @@unique([userId, missionId])
+  @@map("user_missions")
+}
