@@ -1,153 +1,103 @@
+const storeService = require('../services/store.service');
 const prisma = require('../config/db');
-const { successResponse, errorResponse } = require('../utils/responseHelper');
-const { calculateDistance, formatDistance, SIDRAP_DEFAULT_LAT, SIDRAP_DEFAULT_LNG } = require('../utils/haversine');
+const { successResponse, paginateResponse, errorResponse } = require('../utils/responseHelper');
 
-// Get all bookstores with calculated distance
 const getStores = async (req, res, next) => {
   try {
-    const {
-      search,
-      district,
-      userLat = SIDRAP_DEFAULT_LAT,
-      userLng = SIDRAP_DEFAULT_LNG,
-    } = req.query;
-
-    const lat = parseFloat(userLat);
-    const lng = parseFloat(userLng);
-
-    const where = {
-      mitraType: 'TOKO_BUKU',
-      status: 'APPROVED',
-    };
-
-    if (search) {
-      where.OR = [
-        { organizationName: { contains: search } },
-        { description: { contains: search } },
-        { address: { contains: search } },
-      ];
-    }
-
-    if (district) {
-      where.district = district;
-    }
-
-    const stores = await prisma.mitraProfile.findMany({
-      where,
-      include: {
-        _count: {
-          select: { products: true },
-        },
-      },
-      orderBy: { organizationName: 'asc' },
-    });
-
-    const formattedStores = stores.map((store) => {
-      const distanceKm = calculateDistance(lat, lng, store.latitude, store.longitude);
-      return {
-        id: store.id,
-        name: store.organizationName,
-        slug: store.slug,
-        address: store.address,
-        district: store.district,
-        village: store.village,
-        phoneWa: store.phoneWa,
-        description: store.description,
-        logo: store.logo,
-        banner: store.banner,
-        openHours: store.openHours,
-        totalProducts: store._count.products,
-        latitude: store.latitude,
-        longitude: store.longitude,
-        distanceKm,
-        formattedDistance: formatDistance(distanceKm),
-        isOpen: true, // Default open indicator
-      };
-    });
-
-    // Sort by nearest
-    formattedStores.sort((a, b) => (a.distanceKm ?? 999) - (b.distanceKm ?? 999));
-
-    return successResponse(res, 'Daftar toko buku berhasil dimuat.', formattedStores);
+    const { page = 1, limit = 12, search, district, userLat, userLng } = req.query;
+    const result = await storeService.getStores({ page, limit, search, district, userLat, userLng });
+    return paginateResponse(res, 'Daftar toko buku berhasil dimuat.', result.stores, result.page, result.limit, result.total);
   } catch (error) {
     next(error);
   }
 };
 
-// Get single bookstore with products
 const getStoreById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const storeId = isNaN(id) ? undefined : parseInt(id);
-    const slug = isNaN(id) ? id : undefined;
+    const { userLat, userLng } = req.query;
+    const store = await storeService.getStoreById(req.params.id, userLat, userLng);
+    return successResponse(res, 'Detail toko buku berhasil dimuat.', store);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const where = storeId ? { id: storeId } : { slug };
+const createStore = async (req, res, next) => {
+  try {
+    const mitraId = req.user.mitraProfile.id;
+    const store = await storeService.createStore(mitraId, req.body, req.files);
+    return successResponse(res, 'Toko buku berhasil didaftarkan.', store, 201);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const store = await prisma.mitraProfile.findFirst({
-      where: {
-        ...where,
-        mitraType: 'TOKO_BUKU',
-        status: 'APPROVED',
-      },
-      include: {
-        products: {
-          where: { isAvailable: true },
-          include: {
-            book: {
-              include: { category: true },
-            },
-          },
-        },
-        user: {
-          select: { name: true, email: true },
-        },
-      },
-    });
+const updateStore = async (req, res, next) => {
+  try {
+    const updated = await storeService.updateStore(req.params.id, req.body, req.files);
+    return successResponse(res, 'Data toko buku berhasil diperbarui.', updated);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    if (!store) {
-      return errorResponse(res, 'Toko buku tidak ditemukan.', 404);
+const deleteStore = async (req, res, next) => {
+  try {
+    await storeService.deleteStore(req.params.id);
+    return successResponse(res, 'Toko buku berhasil dihapus.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Store Products
+const getStoreProducts = async (req, res, next) => {
+  try {
+    const products = await storeService.getStoreProducts(req.params.id);
+    return successResponse(res, 'Daftar produk toko berhasil dimuat.', products);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addStoreProduct = async (req, res, next) => {
+  try {
+    const { bookId, price, stock, condition } = req.body;
+    if (!bookId || price === undefined) {
+      return errorResponse(res, 'Buku dan harga wajib ditentukan.', 400);
     }
+    const product = await storeService.addStoreProduct(req.params.id, { bookId, price, stock, condition });
+    return successResponse(res, 'Buku berhasil ditambahkan ke inventaris toko.', product, 201);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const userLat = parseFloat(req.query.userLat || SIDRAP_DEFAULT_LAT);
-    const userLng = parseFloat(req.query.userLng || SIDRAP_DEFAULT_LNG);
-    const distanceKm = calculateDistance(userLat, userLng, store.latitude, store.longitude);
+const updateStoreProduct = async (req, res, next) => {
+  try {
+    const storeId = parseInt(req.params.id);
+    const productId = parseInt(req.params.productId);
+    const product = await prisma.storeProduct.findUnique({ where: { id: productId } });
+    if (!product || product.storeId !== storeId) {
+      return errorResponse(res, 'Produk tidak ditemukan di toko ini.', 404);
+    }
+    const updated = await storeService.updateStoreProduct(productId, req.body);
+    return successResponse(res, 'Produk berhasil diperbarui.', updated);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const formattedProducts = store.products.map((p) => ({
-      productId: p.id,
-      bookId: p.book.id,
-      title: p.book.title,
-      author: p.book.author,
-      coverImage: p.book.coverImage,
-      category: p.book.category.name,
-      rating: p.book.rating,
-      price: Number(p.price),
-      stock: p.stock,
-      isAvailable: p.isAvailable && p.stock > 0,
-      waLink: `https://wa.me/${store.phoneWa.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-        `Halo ${store.organizationName}, saya tertarik memesan buku berikut melalui MABBACA:\n\n- Judul Buku: ${p.book.title}\n- Penulis: ${p.book.author}\n- Harga: Rp ${Number(p.price).toLocaleString('id-ID')}\n- Jumlah: 1 pcs\n\nNama Pemesan: \nAlamat Lengkap di Sidrap: \n\nMohon konfirmasi ketersediaan dan ongkos kirim. Terima kasih!`
-      )}`,
-    }));
-
-    const responseData = {
-      id: store.id,
-      name: store.organizationName,
-      slug: store.slug,
-      address: store.address,
-      district: store.district,
-      village: store.village,
-      phoneWa: store.phoneWa,
-      description: store.description,
-      logo: store.logo,
-      banner: store.banner,
-      openHours: store.openHours,
-      latitude: store.latitude,
-      longitude: store.longitude,
-      distanceKm,
-      formattedDistance: formatDistance(distanceKm),
-      products: formattedProducts,
-    };
-
-    return successResponse(res, 'Detail toko buku berhasil dimuat.', responseData);
+const deleteStoreProduct = async (req, res, next) => {
+  try {
+    const storeId = parseInt(req.params.id);
+    const productId = parseInt(req.params.productId);
+    const product = await prisma.storeProduct.findUnique({ where: { id: productId } });
+    if (!product || product.storeId !== storeId) {
+      return errorResponse(res, 'Produk tidak ditemukan di toko ini.', 404);
+    }
+    await storeService.deleteStoreProduct(productId);
+    return successResponse(res, 'Produk berhasil dihapus dari inventaris.');
   } catch (error) {
     next(error);
   }
@@ -156,4 +106,11 @@ const getStoreById = async (req, res, next) => {
 module.exports = {
   getStores,
   getStoreById,
+  createStore,
+  updateStore,
+  deleteStore,
+  getStoreProducts,
+  addStoreProduct,
+  updateStoreProduct,
+  deleteStoreProduct,
 };

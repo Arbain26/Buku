@@ -1,54 +1,65 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ShieldAlert, ArrowLeft, LogOut } from 'lucide-react';
-import { Button } from '../components/common/Button';
 
-// Layouts
+// Layouts (loaded directly for instant shell rendering)
 import { MainLayout } from '../layouts/MainLayout';
 import { DashboardLayout } from '../layouts/DashboardLayout';
 
-// Public Pages
-import { HomePage } from '../pages/public/HomePage';
-import { BooksPage } from '../pages/public/BooksPage';
-import { BookDetailPage } from '../pages/public/BookDetailPage';
-import { StoresPage } from '../pages/public/StoresPage';
-import { StoreDetailPage } from '../pages/public/StoreDetailPage';
-import { LibrariesPage } from '../pages/public/LibrariesPage';
-import { LibraryDetailPage } from '../pages/public/LibraryDetailPage';
-import { CommunitiesPage } from '../pages/public/CommunitiesPage';
-import { CommunityDetailPage } from '../pages/public/CommunityDetailPage';
-import { EventsPage } from '../pages/public/EventsPage';
-import { EventDetailPage } from '../pages/public/EventDetailPage';
-import { ArticlesPage } from '../pages/public/ArticlesPage';
-import { ArticleDetailPage } from '../pages/public/ArticleDetailPage';
-import { UniversalSearchPage } from '../pages/public/UniversalSearchPage';
-import { MitraLandingPage } from '../pages/public/MitraLandingPage';
+// Loading fallback component matching MABBACA Design System
+const PageFallback = () => (
+  <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-3 p-8">
+    <div className="w-9 h-9 border-3 border-[#075E54]/20 border-t-[#075E54] rounded-full animate-spin" />
+    <span className="text-xs font-semibold text-[#66736D] animate-pulse">
+      Memuat halaman MABBACA...
+    </span>
+  </div>
+);
+
+// Route-based Code Splitting with React.lazy
+const HomePage = lazy(() => import('../pages/public/HomePage').then((m) => ({ default: m.HomePage })));
+const BooksPage = lazy(() => import('../pages/public/BooksPage').then((m) => ({ default: m.BooksPage })));
+const BookDetailPage = lazy(() => import('../pages/public/BookDetailPage').then((m) => ({ default: m.BookDetailPage })));
+const StoresPage = lazy(() => import('../pages/public/StoresPage').then((m) => ({ default: m.StoresPage })));
+const StoreDetailPage = lazy(() => import('../pages/public/StoreDetailPage').then((m) => ({ default: m.StoreDetailPage })));
+const LibrariesPage = lazy(() => import('../pages/public/LibrariesPage').then((m) => ({ default: m.LibrariesPage })));
+const LibraryDetailPage = lazy(() => import('../pages/public/LibraryDetailPage').then((m) => ({ default: m.LibraryDetailPage })));
+const CommunitiesPage = lazy(() => import('../pages/public/CommunitiesPage').then((m) => ({ default: m.CommunitiesPage })));
+const CommunityDetailPage = lazy(() => import('../pages/public/CommunityDetailPage').then((m) => ({ default: m.CommunityDetailPage })));
+const EventsPage = lazy(() => import('../pages/public/EventsPage').then((m) => ({ default: m.EventsPage })));
+const EventDetailPage = lazy(() => import('../pages/public/EventDetailPage').then((m) => ({ default: m.EventDetailPage })));
+const ArticlesPage = lazy(() => import('../pages/public/ArticlesPage').then((m) => ({ default: m.ArticlesPage })));
+const ArticleDetailPage = lazy(() => import('../pages/public/ArticleDetailPage').then((m) => ({ default: m.ArticleDetailPage })));
+const UniversalSearchPage = lazy(() => import('../pages/public/UniversalSearchPage').then((m) => ({ default: m.UniversalSearchPage })));
+const MitraLandingPage = lazy(() => import('../pages/public/MitraLandingPage').then((m) => ({ default: m.MitraLandingPage })));
+const AboutPage = lazy(() => import('../pages/public/AboutPage').then((m) => ({ default: m.AboutPage })));
 
 // Auth Pages
-import { LoginPage } from '../pages/auth/LoginPage';
-import { RegisterPage } from '../pages/auth/RegisterPage';
-import { RegisterMitraPage } from '../pages/auth/RegisterMitraPage';
+const LoginPage = lazy(() => import('../pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('../pages/auth/RegisterPage').then((m) => ({ default: m.RegisterPage })));
+const RegisterMitraPage = lazy(() => import('../pages/auth/RegisterMitraPage').then((m) => ({ default: m.RegisterMitraPage })));
 
 // Admin Auth & Dashboard
-import { AdminLoginPage } from '../pages/admin/AdminLoginPage';
-import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
+const AdminLoginPage = lazy(() => import('../pages/admin/AdminLoginPage').then((m) => ({ default: m.AdminLoginPage })));
+const AdminDashboardPage = lazy(() => import('../pages/admin/AdminDashboardPage').then((m) => ({ default: m.AdminDashboardPage })));
 
 // User & Mitra Dashboards
-import { UserDashboardPage } from '../pages/user/UserDashboardPage';
-import { MitraDashboardPage } from '../pages/mitra/MitraDashboardPage';
+const UserDashboardPage = lazy(() => import('../pages/user/UserDashboardPage').then((m) => ({ default: m.UserDashboardPage })));
+const ProfilePage = lazy(() => import('../pages/user/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const MitraDashboardPage = lazy(() => import('../pages/mitra/MitraDashboardPage').then((m) => ({ default: m.MitraDashboardPage })));
 
 // Protected Route Helpers
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
-  if (isLoading) return <div className="p-8 text-center text-sm">Memverifikasi sesi...</div>;
+  if (isLoading) return <PageFallback />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 };
 
 const MitraRoute = ({ children }) => {
   const { isAuthenticated, isMitra, isLoading } = useAuth();
-  if (isLoading) return <div className="p-8 text-center text-sm">Memverifikasi sesi mitra...</div>;
+  if (isLoading) return <PageFallback />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (!isMitra) return <Navigate to="/dashboard" replace />;
   return children;
@@ -117,73 +128,112 @@ const AdminRoute = ({ children }) => {
 
 export const AppRoutes = () => {
   return (
-    <Routes>
-      {/* Public Pages wrapped in MainLayout */}
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/search" element={<UniversalSearchPage />} />
-        <Route path="/buku" element={<BooksPage />} />
-        <Route path="/buku/:id" element={<BookDetailPage />} />
-        <Route path="/literasi/toko" element={<StoresPage />} />
-        <Route path="/literasi/toko/:id" element={<StoreDetailPage />} />
-        <Route path="/literasi/perpustakaan" element={<LibrariesPage />} />
-        <Route path="/literasi/perpustakaan/:id" element={<LibraryDetailPage />} />
-        <Route path="/komunitas" element={<CommunitiesPage />} />
-        <Route path="/komunitas/:id" element={<CommunityDetailPage />} />
-        <Route path="/event" element={<EventsPage />} />
-        <Route path="/event/:id" element={<EventDetailPage />} />
-        <Route path="/baca-5-menit" element={<ArticlesPage />} />
-        <Route path="/baca-5-menit/:id" element={<ArticleDetailPage />} />
-        <Route path="/mitra" element={<MitraLandingPage />} />
+    <Suspense fallback={<PageFallback />}>
+      <Routes>
+        {/* Public Pages wrapped in MainLayout */}
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/search" element={<UniversalSearchPage />} />
 
-        {/* Auth routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/register-mitra" element={<RegisterMitraPage />} />
+          {/* Books */}
+          <Route path="/buku" element={<BooksPage />} />
+          <Route path="/buku/:id" element={<BookDetailPage />} />
+          <Route path="/books" element={<BooksPage />} />
+          <Route path="/books/:id" element={<BookDetailPage />} />
 
-        {/* User Dashboard */}
+          {/* Stores */}
+          <Route path="/literasi/toko" element={<StoresPage />} />
+          <Route path="/literasi/toko/:id" element={<StoreDetailPage />} />
+          <Route path="/stores" element={<StoresPage />} />
+          <Route path="/stores/:id" element={<StoreDetailPage />} />
+
+          {/* Libraries */}
+          <Route path="/literasi/perpustakaan" element={<LibrariesPage />} />
+          <Route path="/literasi/perpustakaan/:id" element={<LibraryDetailPage />} />
+          <Route path="/libraries" element={<LibrariesPage />} />
+          <Route path="/libraries/:id" element={<LibraryDetailPage />} />
+
+          {/* Communities */}
+          <Route path="/komunitas" element={<CommunitiesPage />} />
+          <Route path="/komunitas/:id" element={<CommunityDetailPage />} />
+          <Route path="/communities" element={<CommunitiesPage />} />
+          <Route path="/communities/:id" element={<CommunityDetailPage />} />
+
+          {/* Events */}
+          <Route path="/event" element={<EventsPage />} />
+          <Route path="/event/:id" element={<EventDetailPage />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/events/:id" element={<EventDetailPage />} />
+
+          {/* Articles */}
+          <Route path="/baca-5-menit" element={<ArticlesPage />} />
+          <Route path="/baca-5-menit/:id" element={<ArticleDetailPage />} />
+          <Route path="/articles" element={<ArticlesPage />} />
+          <Route path="/articles/:id" element={<ArticleDetailPage />} />
+
+          {/* Mitra & About */}
+          <Route path="/mitra" element={<MitraLandingPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/tentang" element={<AboutPage />} />
+
+          {/* Auth routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/register-mitra" element={<RegisterMitraPage />} />
+          <Route path="/register/mitra" element={<RegisterMitraPage />} />
+
+          {/* User Dashboard & Profile */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <UserDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* Dedicated Admin Login Route */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+
+        {/* Admin Panel Index redirect */}
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+
+        {/* Admin Dashboard Panel with dedicated sidebar & role protection */}
         <Route
-          path="/dashboard"
+          path="/admin"
           element={
-            <ProtectedRoute>
-              <UserDashboardPage />
-            </ProtectedRoute>
+            <AdminRoute>
+              <DashboardLayout type="admin" />
+            </AdminRoute>
           }
-        />
-      </Route>
+        >
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+        </Route>
 
-      {/* Dedicated Admin Login Route */}
-      <Route path="/admin/login" element={<AdminLoginPage />} />
+        {/* Mitra Dashboard Panel with dedicated sidebar & role protection */}
+        <Route
+          path="/mitra"
+          element={
+            <MitraRoute>
+              <DashboardLayout type="mitra" />
+            </MitraRoute>
+          }
+        >
+          <Route path="dashboard" element={<MitraDashboardPage />} />
+        </Route>
 
-      {/* Admin Panel Index redirect */}
-      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-
-      {/* Admin Dashboard Panel with dedicated sidebar & role protection */}
-      <Route
-        path="/admin"
-        element={
-          <AdminRoute>
-            <DashboardLayout type="admin" />
-          </AdminRoute>
-        }
-      >
-        <Route path="dashboard" element={<AdminDashboardPage />} />
-      </Route>
-
-      {/* Mitra Dashboard Panel with dedicated sidebar & role protection */}
-      <Route
-        path="/mitra"
-        element={
-          <MitraRoute>
-            <DashboardLayout type="mitra" />
-          </MitraRoute>
-        }
-      >
-        <Route path="dashboard" element={<MitraDashboardPage />} />
-      </Route>
-
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 };

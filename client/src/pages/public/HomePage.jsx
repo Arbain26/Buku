@@ -4,33 +4,47 @@ import {
   BookOpen,
   Landmark,
   Store,
-  GraduationCap,
-  Sparkles,
-  MapPin,
-  ArrowRight,
-  Clock,
+  Calendar,
   Users,
+  Clock,
+  ArrowRight,
   Compass,
+  MapPin,
+  Sparkles,
+  FileText,
+  Search,
 } from 'lucide-react';
-import { bookService, storeService, libraryService, eventService, articleService, communityService } from '../../services/dataServices';
+import {
+  bookService,
+  storeService,
+  libraryService,
+  eventService,
+  articleService,
+  communityService,
+} from '../../services/dataServices';
 import { useLocation } from '../../contexts/LocationContext';
 import { BookCard } from '../../components/cards/BookCard';
+import { StoreCard } from '../../components/cards/StoreCard';
+import { LibraryCard } from '../../components/cards/LibraryCard';
+import { CommunityCard } from '../../components/cards/CommunityCard';
 import { EventCard } from '../../components/cards/EventCard';
 import { ArticleCard } from '../../components/cards/ArticleCard';
 import { CardSkeleton } from '../../components/common/Skeleton';
 import { Button } from '../../components/common/Button';
+import { EmptyState } from '../../components/common/EmptyState';
 
 export const HomePage = () => {
   const navigate = useNavigate();
   const { location, requestGeolocation, isDetecting } = useLocation();
 
+  const [heroSearch, setHeroSearch] = useState('');
   const [books, setBooks] = useState([]);
   const [stores, setStores] = useState([]);
   const [libraries, setLibraries] = useState([]);
   const [communities, setCommunities] = useState([]);
   const [events, setEvents] = useState([]);
   const [articles, setArticles] = useState([]);
-  const [activeNearbyTab, setActiveNearbyTab] = useState('perpustakaan'); // perpustakaan, toko, komunitas
+  const [activeNearbyTab, setActiveNearbyTab] = useState('perpustakaan'); // perpustakaan | toko | komunitas
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -38,10 +52,10 @@ export const HomePage = () => {
       try {
         setIsLoading(true);
         const [booksRes, storesRes, libsRes, commsRes, eventsRes, artsRes] = await Promise.all([
-          bookService.getBooks({ limit: 5 }),
-          storeService.getStores({ userLat: location.lat, userLng: location.lng }),
-          libraryService.getLibraries({ userLat: location.lat, userLng: location.lng }),
-          communityService.getCommunities({ userLat: location.lat, userLng: location.lng }),
+          bookService.getBooks({ limit: 4 }),
+          storeService.getStores({ userLat: location.lat, userLng: location.lng, limit: 3 }),
+          libraryService.getLibraries({ userLat: location.lat, userLng: location.lng, limit: 3 }),
+          communityService.getCommunities({ userLat: location.lat, userLng: location.lng, limit: 3 }),
           eventService.getEvents({ limit: 3 }),
           articleService.getArticles({ limit: 3 }),
         ]);
@@ -62,95 +76,148 @@ export const HomePage = () => {
     fetchData();
   }, [location.lat, location.lng]);
 
+  const handleHeroSearch = (e) => {
+    e.preventDefault();
+    if (heroSearch.trim()) {
+      navigate(`/search?q=${encodeURIComponent(heroSearch.trim())}`);
+    }
+  };
+
   const quickCategories = [
     {
       title: 'Buku',
-      desc: 'Jelajahi koleksi buku',
+      desc: 'Ribuan judul bacaan',
       icon: BookOpen,
-      color: 'bg-emerald-50 text-[#075E54] border-emerald-100',
+      color: 'bg-[#E8F3EF] text-[#075E54] border-[#cbe1d7]',
       link: '/buku',
     },
     {
-      title: 'Perpustakaan',
-      desc: 'Temukan perpustakaan terdekat',
-      icon: Landmark,
-      color: 'bg-teal-50 text-[#0F766E] border-teal-100',
-      link: '/literasi/perpustakaan',
-    },
-    {
       title: 'Toko Buku',
-      desc: 'Dukung toko buku lokal',
+      desc: 'Toko buku terdekat',
       icon: Store,
-      color: 'bg-emerald-50 text-[#075E54] border-emerald-100',
+      color: 'bg-emerald-50 text-[#075E54] border-emerald-200',
       link: '/literasi/toko',
     },
     {
-      title: 'Kelas & Event',
-      desc: 'Tingkatkan kemampuanmu',
-      icon: GraduationCap,
-      color: 'bg-cyan-50 text-cyan-800 border-cyan-100',
+      title: 'Perpustakaan',
+      desc: 'Peminjaman publik',
+      icon: Landmark,
+      color: 'bg-teal-50 text-[#0F766E] border-teal-200',
+      link: '/literasi/perpustakaan',
+    },
+    {
+      title: 'Komunitas',
+      desc: 'Ruang belajar bersama',
+      icon: Users,
+      color: 'bg-sky-50 text-sky-800 border-sky-200',
+      link: '/komunitas',
+    },
+    {
+      title: 'Event',
+      desc: 'Agenda literasi aktif',
+      icon: Calendar,
+      color: 'bg-amber-50 text-amber-800 border-amber-200',
       link: '/event',
+    },
+    {
+      title: 'Baca 5 Menit',
+      desc: 'Artikel edukatif ringkas',
+      icon: FileText,
+      color: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+      link: '/baca-5-menit',
     },
   ];
 
   return (
-    <div className="space-y-10 sm:space-y-14 pb-16">
+    <div className="space-y-10 sm:space-y-16 pb-16 w-full max-w-full overflow-x-hidden">
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-[#075E54] text-white">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#075E54] to-[#05473F] text-white w-full">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-20 flex flex-col lg:flex-row items-center gap-8 lg:gap-14 w-full">
           {/* Left Text */}
-          <div className="flex-1 space-y-4 text-center lg:text-left z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur-sm text-emerald-100 border border-white/20">
-              <Compass className="w-3.5 h-3.5" />
-              Ekosistem Literasi Kabupaten Sidrap
+          <div className="flex-1 space-y-4 text-center lg:text-left z-10 w-full max-w-full min-w-0">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur-xs text-emerald-100 border border-white/20 max-w-full">
+              <Compass className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Ekosistem Literasi Masyarakat Sidrap</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight">
-              Temukan Literasi di Sekitarmu
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white leading-tight break-words">
+              Temukan Literasi di Sekitarmu.
             </h1>
 
-            <p className="text-emerald-100 font-medium text-base sm:text-lg">
-              Cari. Baca. Belajar. Berbagi.
+            <p className="text-white/90 text-xs sm:text-base max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              MABBACA membantu masyarakat Sidenreng Rappang menemukan buku, perpustakaan daerah, toko buku lokal, komunitas pegiat baca, agenda event, dan artikel literasi bermanfaat dalam satu ekosistem terpadu.
             </p>
 
-            <p className="text-white/80 text-sm sm:text-base max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              Temukan buku, perpustakaan, toko buku, komunitas, dan kegiatan literasi yang ada di sekitar Anda di seluruh Kabupaten Sidrap.
-            </p>
+            {/* Big Search Bar */}
+            <form
+              onSubmit={handleHeroSearch}
+              className="pt-2 max-w-xl mx-auto lg:mx-0 w-full"
+            >
+              <div className="relative flex items-center shadow-lg rounded-2xl bg-white p-1 sm:p-1.5 border border-white/30 w-full">
+                <Search className="w-4 sm:w-5 h-4 sm:h-5 text-gray-400 ml-2.5 sm:ml-3 shrink-0" />
+                <input
+                  type="text"
+                  value={heroSearch}
+                  onChange={(e) => setHeroSearch(e.target.value)}
+                  placeholder="Cari buku, toko, event..."
+                  className="flex-1 min-w-0 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-[#17211D] placeholder-gray-400 focus:outline-none bg-transparent"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="bg-[#075E54] text-white hover:bg-[#05473F] font-bold shrink-0 rounded-xl px-3.5 sm:px-6 shadow-xs text-xs sm:text-sm"
+                >
+                  Cari
+                </Button>
+              </div>
+            </form>
 
-            <div className="pt-3 flex flex-wrap items-center justify-center lg:justify-start gap-3">
+            {/* Dual CTAs */}
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-2.5 sm:gap-3 w-full sm:w-auto">
               <Button
-                size="lg"
+                variant="light"
+                size="md"
                 onClick={() => navigate('/buku')}
-                className="bg-white text-[#075E54] hover:bg-emerald-50 font-semibold shadow-md"
+                className="w-full sm:w-auto gap-2 shadow-md justify-center"
               >
-                Jelajahi Sekarang <ArrowRight className="w-4 h-4 ml-1" />
+                Jelajahi Literasi <ArrowRight className="w-4 h-4" />
               </Button>
 
               <Button
                 variant="outline"
-                size="lg"
+                size="md"
                 onClick={requestGeolocation}
                 disabled={isDetecting}
-                className="border-white/40 text-white bg-white/10 hover:bg-white/20"
+                className="w-full sm:w-auto border-white/40 text-white bg-white/10 hover:bg-white/20 justify-center"
               >
-                <MapPin className="w-4 h-4 mr-1 text-emerald-300" />
-                {isDetecting ? 'Mendeteksi...' : location.isDetected ? location.district : 'Aktifkan Lokasi Saya'}
+                <MapPin className="w-4 h-4 mr-1 text-emerald-300 shrink-0" />
+                <span className="truncate">
+                  {isDetecting
+                    ? 'Mendeteksi...'
+                    : location.isDetected
+                    ? location.name
+                    : 'Temukan Terdekat'}
+                </span>
               </Button>
             </div>
           </div>
 
-          {/* Right Visual (Authentic literacy photography feel) */}
-          <div className="flex-1 relative w-full max-w-lg lg:max-w-none">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 aspect-[4/3]">
+          {/* Right Visual (Authentic literacy photo feeling) */}
+          <div className="flex-1 relative w-full max-w-md lg:max-w-none">
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 aspect-[16/10] sm:aspect-[4/3] max-h-72 sm:max-h-96 lg:max-h-none bg-emerald-900">
               <img
                 src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1000&auto=format&fit=crop&q=80"
                 alt="Aktivitas Literasi Masyarakat Sidrap"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end p-4 sm:p-6">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent flex items-end p-5 sm:p-6">
                 <div className="text-white">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-emerald-300">Aktivitas Komunitas</p>
-                  <p className="text-sm font-medium">Lapak Baca & Diskusi Pemuda di Ruang Terbuka Sidrap</p>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 bg-black/40 px-2 py-0.5 rounded-md">
+                    Gerakan Sidrap Membaca
+                  </span>
+                  <p className="text-sm sm:text-base font-bold mt-1">
+                    Lapak Baca & Diskusi Ruang Publik di Pangkajene
+                  </p>
                 </div>
               </div>
             </div>
@@ -159,309 +226,319 @@ export const HomePage = () => {
       </section>
 
       {/* 2. QUICK CATEGORY CARDS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-10 relative z-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-5 sm:-mt-10 relative z-20 w-full">
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-4 w-full">
           {quickCategories.map((cat) => {
             const IconComponent = cat.icon;
             return (
               <Link
                 key={cat.title}
                 to={cat.link}
-                className="group bg-white rounded-2xl p-4 sm:p-5 border border-[#E5E7EB] shadow-card hover:shadow-card-hover hover:border-[#075E54]/30 hover:-translate-y-1 transition-all flex items-center gap-3.5"
+                className="group bg-white rounded-2xl p-2 sm:p-4 border border-[#E2E8E5] shadow-xs hover:shadow-card-hover hover:border-[#075E54]/30 hover:-translate-y-0.5 transition-all flex flex-col items-center text-center w-full"
               >
-                <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 border ${cat.color} group-hover:scale-110 transition-transform`}>
-                  <IconComponent className="w-5 h-5 sm:w-6 sm:h-6" />
+                <div className={`w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-1 sm:mb-2.5 border ${cat.color} group-hover:scale-105 transition-transform`}>
+                  <IconComponent className="w-4 h-4 sm:w-6 sm:h-6" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-sm sm:text-base text-[#17211D] group-hover:text-[#075E54] transition-colors">
-                    {cat.title}
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{cat.desc}</p>
-                </div>
+                <h3 className="font-bold text-[11px] sm:text-xs md:text-sm text-[#17211D] group-hover:text-[#075E54] transition-colors line-clamp-1">
+                  {cat.title}
+                </h3>
+                <p className="hidden sm:block text-[11px] text-[#66736D] mt-0.5 line-clamp-1">{cat.desc}</p>
               </Link>
             );
           })}
         </div>
       </section>
 
-      {/* 3. BUKU PILIHAN & LITERASI TERDEKAT (Two Columns Grid matching mockup) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Column: Buku Pilihan (7 cols) */}
-          <div className="lg:col-span-8 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-[#17211D] tracking-tight">
-                  Buku Pilihan
-                </h2>
-                <p className="text-xs sm:text-sm text-gray-500">
-                  Rekomendasi bacaan terbaik dari perpustakaan dan toko buku di Sidrap
-                </p>
+      {/* 3. BUKU PILIHAN */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
+          <div>
+            <div className="inline-flex items-center gap-1 text-xs font-bold text-[#075E54] uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5" /> Rekomendasi
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[#17211D] tracking-tight">
+              Buku Pilihan
+            </h2>
+            <p className="text-xs sm:text-sm text-[#66736D]">
+              Temukan bacaan menarik dari berbagai sumber literasi di Kabupaten Sidrap.
+            </p>
+          </div>
+          <Link
+            to="/buku"
+            className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-[#075E54] hover:underline shrink-0"
+          >
+            Lihat Semua Buku <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-6 w-full">
+            {[1, 2, 3, 4].map((n) => (
+              <CardSkeleton key={n} />
+            ))}
+          </div>
+        ) : books.length === 0 ? (
+          <EmptyState
+            title="Belum ada buku pilihan"
+            description="Buku pilihan dari toko buku dan perpustakaan Sidrap akan segera ditampilkan."
+          />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-6 w-full">
+            {books.slice(0, 4).map((book) => (
+              <BookCard key={book.id} book={book} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 4. LITERASI TERDEKAT */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="bg-[#E8F3EF]/50 rounded-3xl p-4 sm:p-8 border border-[#cbe1d7]/60 space-y-5 sm:space-y-6 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 w-full">
+            <div>
+              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#075E54] uppercase tracking-wider">
+                <MapPin className="w-3.5 h-3.5" /> Geolokasi Sidrap
               </div>
-              <Link
-                to="/buku"
-                className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#075E54] hover:underline"
-              >
-                Lihat Semua <ArrowRight className="w-4 h-4" />
-              </Link>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-[#17211D]">
+                Literasi Terdekat
+              </h2>
+              <p className="text-xs sm:text-sm text-[#66736D]">
+                Berdasarkan lokasi Anda:{' '}
+                <strong className="text-[#075E54]">{location.name}</strong>
+              </p>
             </div>
 
-            {isLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map((n) => (
-                  <CardSkeleton key={n} />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {books.slice(0, 4).map((book) => (
-                  <BookCard key={book.id} book={book} />
-                ))}
-              </div>
-            )}
+            {/* Toggle Tabs */}
+            <div className="flex bg-white p-1 rounded-2xl border border-[#cbe1d7] shadow-xs shrink-0 overflow-x-auto no-scrollbar max-w-full">
+              <button
+                onClick={() => setActiveNearbyTab('perpustakaan')}
+                className={`px-3 sm:px-4 py-1.5 text-xs font-bold rounded-xl transition-all whitespace-nowrap ${
+                  activeNearbyTab === 'perpustakaan'
+                    ? 'bg-[#075E54] text-white shadow-xs'
+                    : 'text-[#66736D] hover:text-[#17211D]'
+                }`}
+              >
+                Perpustakaan
+              </button>
+              <button
+                onClick={() => setActiveNearbyTab('toko')}
+                className={`px-3 sm:px-4 py-1.5 text-xs font-bold rounded-xl transition-all whitespace-nowrap ${
+                  activeNearbyTab === 'toko'
+                    ? 'bg-[#075E54] text-white shadow-xs'
+                    : 'text-[#66736D] hover:text-[#17211D]'
+                }`}
+              >
+                Toko Buku
+              </button>
+              <button
+                onClick={() => setActiveNearbyTab('komunitas')}
+                className={`px-3 sm:px-4 py-1.5 text-xs font-bold rounded-xl transition-all whitespace-nowrap ${
+                  activeNearbyTab === 'komunitas'
+                    ? 'bg-[#075E54] text-white shadow-xs'
+                    : 'text-[#66736D] hover:text-[#17211D]'
+                }`}
+              >
+                Komunitas
+              </button>
+            </div>
           </div>
 
-          {/* Right Column: Literasi di Sekitarmu (4 cols matching mockup right box) */}
-          <div className="lg:col-span-4 bg-white rounded-2xl border border-[#E5E7EB] p-5 shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-bold text-base sm:text-lg text-[#17211D]">
-                    Literasi di Sekitarmu
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    Berdasarkan lokasi: <strong className="text-[#075E54]">{location.name}</strong>
-                  </p>
-                </div>
-              </div>
-
-              {/* Tabs */}
-              <div className="flex bg-gray-100 p-1 rounded-xl gap-1 mb-4">
-                <button
-                  onClick={() => setActiveNearbyTab('perpustakaan')}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                    activeNearbyTab === 'perpustakaan'
-                      ? 'bg-[#075E54] text-white shadow-xs'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Perpustakaan
-                </button>
-                <button
-                  onClick={() => setActiveNearbyTab('toko')}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                    activeNearbyTab === 'toko'
-                      ? 'bg-[#075E54] text-white shadow-xs'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Toko Buku
-                </button>
-                <button
-                  onClick={() => setActiveNearbyTab('komunitas')}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                    activeNearbyTab === 'komunitas'
-                      ? 'bg-[#075E54] text-white shadow-xs'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  Komunitas
-                </button>
-              </div>
-
-              {/* List Cards with km distance */}
-              <div className="space-y-3">
-                {activeNearbyTab === 'perpustakaan' &&
-                  libraries.map((lib) => (
-                    <Link
-                      key={lib.id}
-                      to={`/literasi/perpustakaan/${lib.id}`}
-                      className="group flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:border-emerald-300 hover:bg-emerald-50/40 transition-all"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-lg bg-teal-50 text-[#0F766E] flex items-center justify-center shrink-0">
-                          <Landmark className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-xs font-semibold text-[#17211D] truncate group-hover:text-[#075E54]">
-                            {lib.name}
-                          </h4>
-                          <p className="text-[11px] text-gray-500 truncate">
-                            {lib.district} • {lib.openHours}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0 ml-2">
-                        <span className="text-xs font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-100">
-                          {lib.formattedDistance}
-                        </span>
-                        <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#075E54]" />
-                      </div>
-                    </Link>
-                  ))}
-
-                {activeNearbyTab === 'toko' &&
-                  stores.map((st) => (
-                    <Link
-                      key={st.id}
-                      to={`/literasi/toko/${st.id}`}
-                      className="group flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:border-emerald-300 hover:bg-emerald-50/40 transition-all"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-lg bg-emerald-50 text-[#075E54] flex items-center justify-center shrink-0">
-                          <Store className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-xs font-semibold text-[#17211D] truncate group-hover:text-[#075E54]">
-                            {st.name}
-                          </h4>
-                          <p className="text-[11px] text-gray-500 truncate">
-                            {st.district} • Buka sekarang
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0 ml-2">
-                        <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                          {st.formattedDistance}
-                        </span>
-                        <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#075E54]" />
-                      </div>
-                    </Link>
-                  ))}
-
-                {activeNearbyTab === 'komunitas' &&
-                  communities.map((cm) => (
-                    <Link
-                      key={cm.id}
-                      to={`/komunitas/${cm.id}`}
-                      className="group flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:border-emerald-300 hover:bg-emerald-50/40 transition-all"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-lg bg-emerald-50 text-[#075E54] flex items-center justify-center shrink-0">
-                          <Users className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-xs font-semibold text-[#17211D] truncate group-hover:text-[#075E54]">
-                            {cm.name}
-                          </h4>
-                          <p className="text-[11px] text-gray-500 truncate">
-                            {cm.district} • {cm.totalMembers} anggota
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0 ml-2">
-                        <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                          {cm.formattedDistance}
-                        </span>
-                        <ArrowRight className="w-3.5 h-3.5 text-gray-400 group-hover:text-[#075E54]" />
-                      </div>
-                    </Link>
-                  ))}
-              </div>
+          {/* Tab Content Cards */}
+          {activeNearbyTab === 'perpustakaan' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {libraries.map((lib) => (
+                <LibraryCard key={lib.id} library={lib} />
+              ))}
             </div>
+          )}
 
-            <div className="pt-4 mt-4 border-t border-gray-100 text-center">
-              <Link
-                to={
-                  activeNearbyTab === 'perpustakaan'
-                    ? '/literasi/perpustakaan'
-                    : activeNearbyTab === 'toko'
-                    ? '/literasi/toko'
-                    : '/komunitas'
-                }
-                className="text-xs font-semibold text-[#075E54] hover:underline"
-              >
-                Lihat Semua {activeNearbyTab === 'perpustakaan' ? 'Perpustakaan' : activeNearbyTab === 'toko' ? 'Toko Buku' : 'Komunitas'} Terdekat →
-              </Link>
+          {activeNearbyTab === 'toko' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {stores.map((store) => (
+                <StoreCard key={store.id} store={store} />
+              ))}
             </div>
+          )}
+
+          {activeNearbyTab === 'komunitas' && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {communities.map((comm) => (
+                <CommunityCard key={comm.id} community={comm} />
+              ))}
+            </div>
+          )}
+
+          <div className="text-center pt-2">
+            <Link
+              to={
+                activeNearbyTab === 'perpustakaan'
+                  ? '/literasi/perpustakaan'
+                  : activeNearbyTab === 'toko'
+                  ? '/literasi/toko'
+                  : '/komunitas'
+              }
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#075E54] hover:underline"
+            >
+              Lihat Semua di Sekitar <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* 4. EVENT LITERASI SECTION */}
+      {/* 5. EVENT LITERASI */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-[#17211D] tracking-tight">
+            <div className="inline-flex items-center gap-1 text-xs font-bold text-[#075E54] uppercase tracking-wider">
+              <Calendar className="w-3.5 h-3.5" /> Agenda Belajar
+            </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[#17211D] tracking-tight">
               Event Literasi
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500">
-              Temukan kegiatan bedah buku, lapak baca, dan diskusi di sekitar Sidrap
+            <p className="text-xs sm:text-sm text-[#66736D]">
+              Ikuti lokakarya, bedah buku, dan kelas komunitas literasi di Sidrap.
             </p>
           </div>
           <Link
             to="/event"
-            className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#075E54] hover:underline"
+            className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-[#075E54] hover:underline shrink-0"
           >
-            Lihat Semua <ArrowRight className="w-4 h-4" />
+            Lihat Semua Event <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {events.map((ev) => (
-            <EventCard key={ev.id} event={ev} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[1, 2, 3].map((n) => (
+              <CardSkeleton key={n} />
+            ))}
+          </div>
+        ) : events.length === 0 ? (
+          <EmptyState
+            title="Belum ada agenda event"
+            description="Agenda kegiatan literasi akan segera hadir."
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {events.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* 5. BACA 5 MENIT SECTION */}
+      {/* 6. BACA 5 MENIT */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-emerald-900/5 rounded-3xl p-6 sm:p-8 border border-emerald-900/10">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-100/60 px-2.5 py-0.5 rounded-full mb-1">
-                <Clock className="w-3.5 h-3.5" /> Baca 5 Menit
-              </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-[#17211D] tracking-tight">
-                Mulai Dari 5 Menit
-              </h2>
-              <p className="text-xs sm:text-sm text-gray-500">
-                Tidak punya banyak waktu? Luangkan 5 menit untuk menambah wawasan dan sejarah Sidrap.
-              </p>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
+          <div>
+            <div className="inline-flex items-center gap-1 text-xs font-bold text-[#075E54] uppercase tracking-wider">
+              <Clock className="w-3.5 h-3.5" /> Bacaan Cepat
             </div>
-            <Link
-              to="/baca-5-menit"
-              className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#075E54] hover:underline"
-            >
-              Lihat Semua <ArrowRight className="w-4 h-4" />
-            </Link>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[#17211D] tracking-tight">
+              Baca 5 Menit
+            </h2>
+            <p className="text-xs sm:text-sm text-[#66736D]">
+              Tingkatkan wawasan dengan artikel ringkas, inspiratif, dan penuh pengetahuan.
+            </p>
           </div>
+          <Link
+            to="/baca-5-menit"
+            className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-[#075E54] hover:underline shrink-0"
+          >
+            Lihat Semua Artikel <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[1, 2, 3].map((n) => (
+              <CardSkeleton key={n} />
+            ))}
+          </div>
+        ) : articles.length === 0 ? (
+          <EmptyState
+            title="Belum ada artikel"
+            description="Artikel ringkas 5 menit akan segera diterbitkan."
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {articles.map((art) => (
               <ArticleCard key={art.id} article={art} />
             ))}
           </div>
-        </div>
+        )}
       </section>
 
-      {/* 6. CALL TO ACTION (CTA) */}
+      {/* 7. KOMUNITAS LITERASI */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl bg-gradient-to-r from-[#075E54] to-[#0F766E] p-8 sm:p-12 text-white text-center shadow-lg relative overflow-hidden">
-          <div className="relative z-10 max-w-2xl mx-auto space-y-4">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Temukan dunia literasi di sekitarmu.
-            </h2>
-            <p className="text-emerald-100 text-sm sm:text-base leading-relaxed">
-              Bergabunglah bersama ribuan masyarakat Sidrap dalam membaca buku, mengunjungi perpustakaan desa, dan meramaikan komunitas literasi.
-            </p>
-            <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
-              <Button
-                size="lg"
-                onClick={() => navigate('/buku')}
-                className="bg-white text-[#075E54] hover:bg-emerald-50 font-semibold"
-              >
-                Mulai Menjelajah
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => navigate('/mitra')}
-                className="border-white/40 text-white bg-white/10 hover:bg-white/20"
-              >
-                Daftar Sebagai Mitra
-              </Button>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
+          <div>
+            <div className="inline-flex items-center gap-1 text-xs font-bold text-[#075E54] uppercase tracking-wider">
+              <Users className="w-3.5 h-3.5" /> Paguyuban & Lapak
             </div>
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[#17211D] tracking-tight">
+              Komunitas Literasi
+            </h2>
+            <p className="text-xs sm:text-sm text-[#66736D]">
+              Bergabung dengan para penggerak baca dan pegiat literasi Sidrap.
+            </p>
+          </div>
+          <Link
+            to="/komunitas"
+            className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-[#075E54] hover:underline shrink-0"
+          >
+            Temukan Komunitas <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[1, 2, 3].map((n) => (
+              <CardSkeleton key={n} />
+            ))}
+          </div>
+        ) : communities.length === 0 ? (
+          <EmptyState
+            title="Belum ada komunitas terdaftar"
+            description="Komunitas literasi masyarakat Sidrap akan muncul di sini."
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {communities.map((comm) => (
+              <CommunityCard key={comm.id} community={comm} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 8. CTA SECTION */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-3xl bg-gradient-to-r from-[#075E54] to-[#0F766E] p-8 sm:p-12 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-center md:text-left max-w-xl">
+            <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              Literasi tumbuh ketika kita terhubung.
+            </h3>
+            <p className="text-xs sm:text-sm text-emerald-100 leading-relaxed">
+              Ayo temukan ruang belajar, bacaan, komunitas, dan kegiatan literasi di sekitar Anda. Bersama kita majukan ekosistem literasi masyarakat Sidrap.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
+            <Button
+              size="lg"
+              onClick={() => navigate('/buku')}
+              className="bg-white text-[#075E54] hover:bg-emerald-50 font-bold shadow-md"
+            >
+              Mulai Menjelajah
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => navigate('/mitra')}
+              className="border-white/40 text-white bg-white/10 hover:bg-white/20 font-semibold"
+            >
+              Gabung Sebagai Mitra
+            </Button>
           </div>
         </div>
       </section>

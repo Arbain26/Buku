@@ -7,6 +7,7 @@ export const Button = ({
   className = '',
   isLoading = false,
   disabled = false,
+  type = 'button',
   ...props
 }) => {
   const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100';
@@ -18,6 +19,8 @@ export const Button = ({
     ghost: 'text-[#17211D] hover:bg-black/5 focus:ring-gray-300',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-sm',
     wa: 'bg-[#25D366] text-white hover:bg-[#20bd5a] focus:ring-[#25D366] font-semibold shadow-sm',
+    light: 'bg-white text-[#075E54] hover:bg-emerald-50 focus:ring-white font-bold shadow-md',
+    white: 'bg-white text-[#075E54] hover:bg-emerald-50 focus:ring-white font-bold shadow-md',
   };
 
   const sizes = {

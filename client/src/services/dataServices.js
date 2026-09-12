@@ -12,7 +12,7 @@ export const bookService = {
   },
 
   async getCategories() {
-    const res = await api.get('/books/categories');
+    const res = await api.get('/categories');
     return res.data;
   },
 
@@ -179,6 +179,143 @@ export const mitraService = {
     const res = await api.put(`/mitra/borrowings/${id}/status`, { status });
     return res.data;
   },
+
+  async getProfile() {
+    const res = await api.get('/mitra/profile');
+    return res.data;
+  },
+
+  async updateProfile(formData) {
+    const res = await api.put('/mitra/profile', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+};
+
+export const orderService = {
+  async createOrder(data) {
+    const res = await api.post('/orders', data);
+    return res.data;
+  },
+
+  async getOrders(params) {
+    const res = await api.get('/orders', { params });
+    return res.data;
+  },
+
+  async getOrderById(id) {
+    const res = await api.get(`/orders/${id}`);
+    return res.data;
+  },
+
+  async contactWhatsapp(id) {
+    const res = await api.post(`/orders/${id}/contact-whatsapp`);
+    return res.data;
+  },
+
+  async updateOrderStatus(id, status) {
+    const res = await api.put(`/orders/${id}/status`, { status });
+    return res.data;
+  },
+};
+
+export const borrowingService = {
+  async getBorrowings(params) {
+    const res = await api.get('/borrowings', { params });
+    return res.data;
+  },
+
+  async getBorrowingById(id) {
+    const res = await api.get(`/borrowings/${id}`);
+    return res.data;
+  },
+
+  async createBorrowing(data) {
+    const res = await api.post('/borrowings', data);
+    return res.data;
+  },
+
+  async approveBorrowing(id) {
+    const res = await api.put(`/borrowings/${id}/approve`);
+    return res.data;
+  },
+
+  async rejectBorrowing(id, notes) {
+    const res = await api.put(`/borrowings/${id}/reject`, { notes });
+    return res.data;
+  },
+
+  async returnBorrowing(id) {
+    const res = await api.put(`/borrowings/${id}/return`);
+    return res.data;
+  },
+};
+
+export const favoriteService = {
+  async getUserFavorites(params) {
+    const res = await api.get('/favorites', { params });
+    return res.data;
+  },
+
+  async toggleBookFavorite(bookId) {
+    const res = await api.post(`/favorites/books/${bookId}`);
+    return res.data;
+  },
+
+  async toggleStoreFavorite(storeId) {
+    const res = await api.post(`/favorites/stores/${storeId}`);
+    return res.data;
+  },
+
+  async toggleLibraryFavorite(libraryId) {
+    const res = await api.post(`/favorites/libraries/${libraryId}`);
+    return res.data;
+  },
+
+  async toggleCommunityFavorite(communityId) {
+    const res = await api.post(`/favorites/communities/${communityId}`);
+    return res.data;
+  },
+
+  async toggleEventFavorite(eventId) {
+    const res = await api.post(`/favorites/events/${eventId}`);
+    return res.data;
+  },
+
+  async toggleArticleFavorite(articleId) {
+    const res = await api.post(`/favorites/articles/${articleId}`);
+    return res.data;
+  },
+};
+
+export const notificationService = {
+  async getNotifications(params) {
+    const res = await api.get('/notifications', { params });
+    return res.data;
+  },
+
+  async markAsRead(id) {
+    const res = await api.put(`/notifications/${id}/read`);
+    return res.data;
+  },
+
+  async markAllAsRead() {
+    const res = await api.put('/notifications/read-all');
+    return res.data;
+  },
+};
+
+export const locationService = {
+  async getLocations(params) {
+    const res = await api.get('/locations', { params });
+    return res.data;
+  },
+
+  async getNearby(params) {
+    const res = await api.get('/locations/nearby', { params });
+    return res.data;
+  },
 };
 
 export const adminService = {
@@ -192,8 +329,13 @@ export const adminService = {
     return res.data;
   },
 
-  async verifyMitra(id, status) {
-    const res = await api.put(`/admin/mitra/${id}/verify`, { status });
+  async getMitraList(params) {
+    const res = await api.get('/admin/mitra', { params });
+    return res.data;
+  },
+
+  async verifyMitra(id, status, reason = null) {
+    const res = await api.put(`/admin/mitra/${id}/verify`, { status, reason });
     return res.data;
   },
 
@@ -206,4 +348,26 @@ export const adminService = {
     const res = await api.get('/admin/users', { params });
     return res.data;
   },
+
+  async getBooks(params) {
+    const res = await api.get('/admin/books', { params });
+    return res.data;
+  },
+
+  async getEvents(params) {
+    const res = await api.get('/admin/events', { params });
+    return res.data;
+  },
+
+  async getArticles(params) {
+    const res = await api.get('/admin/articles', { params });
+    return res.data;
+  },
+
+  async getReports() {
+    const res = await api.get('/admin/reports');
+    return res.data;
+  },
 };
+
+

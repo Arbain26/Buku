@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, User, Mail, Lock, Phone, MapPin, Sparkles } from 'lucide-react';
+import { BookOpen, User, Mail, Lock, Phone, MapPin, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Button } from '../../components/common/Button';
@@ -19,10 +19,23 @@ export const RegisterPage = () => {
     locationAddress: '',
   });
 
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const districts = ['Pangkajene', 'Maritengngae', 'Baranti', 'Watang Pulu', 'Tellu Limpoe', 'Dua Pitue', 'Panca Rijang', 'Kulo'];
+  const districts = [
+    'Pangkajene',
+    'Maritengngae',
+    'Baranti',
+    'Watang Pulu',
+    'Tellu Limpoe',
+    'Dua Pitue',
+    'Panca Rijang',
+    'Kulo',
+    'Panca Lautang',
+    'Watang Sidenreng',
+    'Pitu Riase',
+  ];
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -39,7 +52,7 @@ export const RegisterPage = () => {
       setIsLoading(true);
       setErrorMessage('');
       const res = await register(formData);
-      showToast(res.message, 'success');
+      showToast(res.message || 'Pendaftaran akun berhasil!', 'success');
       navigate('/dashboard');
     } catch (err) {
       const msg = err.response?.data?.message || 'Pendaftaran gagal. Mohon periksa kembali isian form.';
@@ -52,21 +65,21 @@ export const RegisterPage = () => {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-3xl border border-[#E5E7EB] shadow-card">
+      <div className="max-w-md w-full space-y-6 bg-white p-8 rounded-3xl border border-[#E2E8E5] shadow-sm">
         <div className="text-center space-y-2">
           <Link to="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-[#075E54] flex items-center justify-center text-white">
+            <div className="w-10 h-10 rounded-xl bg-[#075E54] flex items-center justify-center text-white shadow-xs">
               <BookOpen className="w-6 h-6" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-[#075E54]">
+            <span className="text-2xl font-extrabold tracking-tight text-[#075E54]">
               MABBACA
             </span>
           </Link>
           <h2 className="text-xl font-bold text-[#17211D]">
-            Daftar Sebagai Pembaca
+            Daftar Sebagai Warga Pembaca
           </h2>
-          <p className="text-xs text-gray-500">
-            Dapatkan poin membaca, pinjam buku, dan ikuti event literasi di Sidrap
+          <p className="text-xs text-[#66736D]">
+            Dapatkan poin membaca, pinjam buku di perpustakaan, dan ikuti kegiatan literasi Sidrap
           </p>
         </div>
 
@@ -78,29 +91,29 @@ export const RegisterPage = () => {
 
         <form onSubmit={handleSubmit} className="space-y-3.5">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Nama Lengkap
+            <label className="block text-xs font-semibold text-[#17211D] mb-1">
+              Nama Lengkap *
             </label>
             <div className="relative">
-              <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Andi Pratama"
+                placeholder="Contoh: Andi Muhammad Pratama"
                 required
-                className="w-full pl-10 pr-4 py-2 rounded-xl text-xs bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+                className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] text-[#17211D] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Alamat Email
+            <label className="block text-xs font-semibold text-[#17211D] mb-1">
+              Alamat Email *
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="email"
                 name="email"
@@ -108,43 +121,43 @@ export const RegisterPage = () => {
                 onChange={handleChange}
                 placeholder="nama@email.com"
                 required
-                className="w-full pl-10 pr-4 py-2 rounded-xl text-xs bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+                className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] text-[#17211D] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-semibold text-[#17211D] mb-1">
               Nomor WhatsApp / HP
             </label>
             <div className="relative">
-              <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Phone className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="081234567890"
-                className="w-full pl-10 pr-4 py-2 rounded-xl text-xs bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+                className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] text-[#17211D] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Wilayah Kecamatan di Sidrap
+            <label className="block text-xs font-semibold text-[#17211D] mb-1">
+              Kecamatan Domisili di Sidrap
             </label>
             <div className="relative">
-              <MapPin className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <MapPin className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <select
                 name="district"
                 value={formData.district}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-2 rounded-xl text-xs bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+                className="w-full pl-10 pr-4 py-2 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] text-[#17211D] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               >
                 {districts.map((d) => (
                   <option key={d} value={d}>
-                    Kec. {d}
+                    Kecamatan {d}
                   </option>
                 ))}
               </select>
@@ -152,20 +165,29 @@ export const RegisterPage = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Kata Sandi (Password)
+            <label className="block text-xs font-semibold text-[#17211D] mb-1">
+              Kata Sandi (Minimal 6 karakter) *
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Minimal 6 karakter"
+                placeholder="••••••••"
                 required
-                className="w-full pl-10 pr-4 py-2 rounded-xl text-xs bg-gray-50 border border-gray-200 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+                minLength={6}
+                className="w-full pl-10 pr-10 py-2 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] text-[#17211D] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
@@ -173,25 +195,17 @@ export const RegisterPage = () => {
             type="submit"
             size="lg"
             isLoading={isLoading}
-            className="w-full bg-[#075E54] text-white hover:bg-[#05473F] font-semibold mt-2"
+            className="w-full bg-[#075E54] text-white hover:bg-[#05473F] font-bold shadow-xs mt-2"
           >
-            <Sparkles className="w-4 h-4" /> Daftar Sekarang (+50 Poin)
+            Buat Akun Pembaca (+25 XP)
           </Button>
         </form>
 
-        <div className="pt-2 text-center text-xs text-gray-500 space-y-1">
-          <p>
-            Sudah memiliki akun?{' '}
-            <Link to="/login" className="font-bold text-[#075E54] hover:underline">
-              Masuk di Sini
-            </Link>
-          </p>
-          <p>
-            Ingin mendaftarkan toko atau perpustakaan?{' '}
-            <Link to="/register-mitra" className="font-bold text-[#0F766E] hover:underline">
-              Daftar Sebagai Mitra
-            </Link>
-          </p>
+        <div className="pt-2 text-center text-xs text-[#66736D] border-t border-gray-100">
+          Sudah memiliki akun?{' '}
+          <Link to="/login" className="font-bold text-[#075E54] hover:underline">
+            Masuk Sekarang
+          </Link>
         </div>
       </div>
     </div>

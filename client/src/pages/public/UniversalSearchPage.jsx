@@ -23,6 +23,8 @@ import { EventCard } from '../../components/cards/EventCard';
 import { ArticleCard } from '../../components/cards/ArticleCard';
 import { CardSkeleton } from '../../components/common/Skeleton';
 import { EmptyState } from '../../components/common/EmptyState';
+import { SearchBar } from '../../components/common/SearchBar';
+import { Tabs } from '../../components/common/Tabs';
 
 export const UniversalSearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -30,10 +32,18 @@ export const UniversalSearchPage = () => {
 
   const query = searchParams.get('q') || '';
   const [searchInput, setSearchInput] = useState(query);
-  const [activeFilter, setActiveFilter] = useState('Semua'); // Semua, Buku, Perpustakaan, Toko Buku, Komunitas, Event, Artikel
+  const [activeFilter, setActiveFilter] = useState('Semua');
 
   const [results, setResults] = useState(null);
-  const [counts, setCounts] = useState({ all: 0, books: 0, libraries: 0, stores: 0, communities: 0, events: 0, articles: 0 });
+  const [counts, setCounts] = useState({
+    all: 0,
+    books: 0,
+    libraries: 0,
+    stores: 0,
+    communities: 0,
+    events: 0,
+    articles: 0,
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -65,199 +75,196 @@ export const UniversalSearchPage = () => {
     fetchSearch();
   }, [query, location.lat, location.lng]);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (searchInput.trim()) {
-      setSearchParams({ q: searchInput.trim() });
+  const handleSearchSubmit = (val) => {
+    if (val && val.trim()) {
+      setSearchParams({ q: val.trim() });
     }
   };
 
   const filterTabs = [
-    { label: 'Semua', count: counts.all },
-    { label: 'Buku', count: counts.books },
-    { label: 'Perpustakaan', count: counts.libraries },
-    { label: 'Toko Buku', count: counts.stores },
-    { label: 'Komunitas', count: counts.communities },
-    { label: 'Event', count: counts.events },
-    { label: 'Artikel', count: counts.articles },
+    { id: 'Semua', label: 'Semua', count: counts.all },
+    { id: 'Buku', label: 'Buku', count: counts.books, icon: BookOpen },
+    { id: 'Toko Buku', label: 'Toko Buku', count: counts.stores, icon: Store },
+    { id: 'Perpustakaan', label: 'Perpustakaan', count: counts.libraries, icon: Landmark },
+    { id: 'Komunitas', label: 'Komunitas', count: counts.communities, icon: Users },
+    { id: 'Event', label: 'Event', count: counts.events, icon: Calendar },
+    { id: 'Artikel', label: 'Artikel', count: counts.articles, icon: FileText },
   ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Search Header */}
-      <div className="max-w-3xl">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#17211D] tracking-tight">
+      <div className="max-w-3xl space-y-2">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#17211D] tracking-tight">
           Pencarian Ekosistem Literasi
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Cari buku, toko buku, perpustakaan, komunitas, agenda event, dan artikel di Sidrap
+        <p className="text-xs sm:text-sm text-[#66736D]">
+          Cari buku, toko buku, perpustakaan, komunitas, agenda event, dan artikel di seluruh Kabupaten Sidrap
         </p>
 
         {/* Input Bar */}
-        <form onSubmit={handleSearchSubmit} className="mt-4 flex gap-2">
-          <div className="relative flex-1">
-            <Search className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Contoh: jurnalistik, stoisisme, baranti, nenek mallomo..."
-              className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#075E54] shadow-xs"
-            />
-          </div>
-          <button
-            type="submit"
-            className="px-6 py-3 bg-[#075E54] text-white text-sm font-semibold rounded-2xl hover:bg-[#05473F] transition-colors shadow-xs shrink-0"
-          >
-            Cari
-          </button>
-        </form>
+        <div className="pt-2">
+          <SearchBar
+            value={searchInput}
+            onChange={setSearchInput}
+            onSubmit={handleSearchSubmit}
+            placeholder="Cari buku, toko, event, komunitas..."
+            size="lg"
+          />
+        </div>
       </div>
 
-      {/* Filter Tabs */}
+      {/* Query Status & Filter Tabs */}
       {query && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-gray-200 scrollbar-none">
-          {filterTabs.map((tab) => (
-            <button
-              key={tab.label}
-              onClick={() => setActiveFilter(tab.label)}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                activeFilter === tab.label
-                  ? 'bg-[#075E54] text-white shadow-xs'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              <span>{tab.label}</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  activeFilter === tab.label ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                {tab.count}
-              </span>
-            </button>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs sm:text-sm text-[#66736D]">
+              Menampilkan hasil untuk: <strong className="text-[#075E54]">&ldquo;{query}&rdquo;</strong> ({counts.all} hasil ditemukan)
+            </p>
+          </div>
+
+          <Tabs
+            tabs={filterTabs}
+            activeTab={activeFilter}
+            onChange={setActiveFilter}
+            variant="pills"
+          />
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, n) => (
+            <CardSkeleton key={n} />
           ))}
         </div>
       )}
 
-      {/* Results Content */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <CardSkeleton key={n} />
-          ))}
-        </div>
-      ) : results ? (
-        counts.all > 0 ? (
-          <div className="space-y-10">
-            {/* Books Section */}
-            {(activeFilter === 'Semua' || activeFilter === 'Buku') && results.books?.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-[#17211D] flex items-center gap-2">
-                    <BookOpen className="w-5 h-5 text-[#075E54]" /> Buku ({results.books.length})
-                  </h3>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {results.books.map((b) => (
-                    <BookCard key={b.id} book={b} />
-                  ))}
-                </div>
-              </div>
-            )}
+      {/* Empty State */}
+      {!isLoading && query && counts.all === 0 && (
+        <EmptyState
+          icon={Search}
+          title="Tidak Ada Hasil Ditemukan"
+          description={`Tidak ada data yang cocok dengan kata kunci "${query}". Silakan coba kata kunci lain seperti nama penulis, judul buku, atau nama kecamatan di Sidrap.`}
+        />
+      )}
 
-            {/* Libraries Section */}
-            {(activeFilter === 'Semua' || activeFilter === 'Perpustakaan') && results.libraries?.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-[#17211D] flex items-center gap-2">
-                    <Landmark className="w-5 h-5 text-[#0F766E]" /> Perpustakaan ({results.libraries.length})
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {results.libraries.map((lib) => (
-                    <LibraryCard key={lib.id} library={lib} />
-                  ))}
-                </div>
-              </div>
-            )}
+      {!isLoading && !query && (
+        <EmptyState
+          icon={Search}
+          title="Mulai Pencarian Literasi"
+          description="Ketik kata kunci di kolom pencarian di atas untuk mencari seluruh ekosistem bacaan di Kabupaten Sidrap."
+        />
+      )}
 
-            {/* Stores Section */}
-            {(activeFilter === 'Semua' || activeFilter === 'Toko Buku') && results.stores?.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-[#17211D] flex items-center gap-2">
-                    <Store className="w-5 h-5 text-[#075E54]" /> Toko Buku ({results.stores.length})
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {results.stores.map((st) => (
-                    <StoreCard key={st.id} store={st} />
-                  ))}
-                </div>
+      {/* Search Results Display by Category */}
+      {!isLoading && results && counts.all > 0 && (
+        <div className="space-y-10">
+          {/* 1. Buku */}
+          {(activeFilter === 'Semua' || activeFilter === 'Buku') && results.books?.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <h3 className="text-base sm:text-lg font-bold text-[#17211D] flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-[#075E54]" />
+                  Buku ({results.books.length})
+                </h3>
+                <Link to={`/buku?q=${encodeURIComponent(query)}`} className="text-xs font-bold text-[#075E54] hover:underline">
+                  Lihat Semua Buku →
+                </Link>
               </div>
-            )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6">
+                {results.books.map((b) => (
+                  <BookCard key={b.id} book={b} />
+                ))}
+              </div>
+            </section>
+          )}
 
-            {/* Communities Section */}
-            {(activeFilter === 'Semua' || activeFilter === 'Komunitas') && results.communities?.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-[#17211D] flex items-center gap-2">
-                    <Users className="w-5 h-5 text-[#075E54]" /> Komunitas ({results.communities.length})
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {results.communities.map((cm) => (
-                    <CommunityCard key={cm.id} community={cm} />
-                  ))}
-                </div>
+          {/* 2. Toko Buku */}
+          {(activeFilter === 'Semua' || activeFilter === 'Toko Buku') && results.stores?.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <h3 className="text-base sm:text-lg font-bold text-[#17211D] flex items-center gap-2">
+                  <Store className="w-5 h-5 text-[#075E54]" />
+                  Toko Buku ({results.stores.length})
+                </h3>
               </div>
-            )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {results.stores.map((s) => (
+                  <StoreCard key={s.id} store={s} />
+                ))}
+              </div>
+            </section>
+          )}
 
-            {/* Events Section */}
-            {(activeFilter === 'Semua' || activeFilter === 'Event') && results.events?.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-[#17211D] flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-[#075E54]" /> Event ({results.events.length})
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {results.events.map((ev) => (
-                    <EventCard key={ev.id} event={ev} />
-                  ))}
-                </div>
+          {/* 3. Perpustakaan */}
+          {(activeFilter === 'Semua' || activeFilter === 'Perpustakaan') && results.libraries?.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <h3 className="text-base sm:text-lg font-bold text-[#17211D] flex items-center gap-2">
+                  <Landmark className="w-5 h-5 text-[#0F766E]" />
+                  Perpustakaan ({results.libraries.length})
+                </h3>
               </div>
-            )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {results.libraries.map((l) => (
+                  <LibraryCard key={l.id} library={l} />
+                ))}
+              </div>
+            </section>
+          )}
 
-            {/* Articles Section */}
-            {(activeFilter === 'Semua' || activeFilter === 'Artikel') && results.articles?.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-[#17211D] flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-[#075E54]" /> Baca 5 Menit ({results.articles.length})
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {results.articles.map((art) => (
-                    <ArticleCard key={art.id} article={art} />
-                  ))}
-                </div>
+          {/* 4. Komunitas */}
+          {(activeFilter === 'Semua' || activeFilter === 'Komunitas') && results.communities?.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <h3 className="text-base sm:text-lg font-bold text-[#17211D] flex items-center gap-2">
+                  <Users className="w-5 h-5 text-[#075E54]" />
+                  Komunitas ({results.communities.length})
+                </h3>
               </div>
-            )}
-          </div>
-        ) : (
-          <EmptyState
-            title={`Tidak menemukan hasil untuk "${query}"`}
-            description="Coba periksa ejaan kata atau gunakan istilah yang lebih umum seperti 'buku', 'sidrap', atau 'jurnalistik'."
-          />
-        )
-      ) : (
-        <div className="p-12 text-center text-gray-400 bg-white rounded-3xl border border-gray-200">
-          <Sparkles className="w-8 h-8 mx-auto text-[#075E54] mb-3" />
-          <p className="text-sm font-medium text-gray-600">
-            Ketik kata kunci di atas untuk mencari buku, toko, perpustakaan, atau event di seluruh ekosistem MABBACA.
-          </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {results.communities.map((c) => (
+                  <CommunityCard key={c.id} community={c} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 5. Event */}
+          {(activeFilter === 'Semua' || activeFilter === 'Event') && results.events?.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <h3 className="text-base sm:text-lg font-bold text-[#17211D] flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-[#075E54]" />
+                  Agenda Event ({results.events.length})
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {results.events.map((e) => (
+                  <EventCard key={e.id} event={e} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 6. Artikel */}
+          {(activeFilter === 'Semua' || activeFilter === 'Artikel') && results.articles?.length > 0 && (
+            <section className="space-y-4">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <h3 className="text-base sm:text-lg font-bold text-[#17211D] flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-[#075E54]" />
+                  Artikel Baca 5 Menit ({results.articles.length})
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {results.articles.map((a) => (
+                  <ArticleCard key={a.id} article={a} />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       )}
     </div>

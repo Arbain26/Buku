@@ -5,20 +5,22 @@ import {
   Clock,
   MapPin,
   Users,
-  ChevronRight,
-  Share2,
   CheckCircle2,
+  AlertCircle,
   Building2,
+  Sparkles,
 } from 'lucide-react';
 import { eventService } from '../../services/dataServices';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Skeleton } from '../../components/common/Skeleton';
+import { Breadcrumb } from '../../components/common/Breadcrumb';
+import { ImageWithFallback } from '../../components/common/ImageWithFallback';
 
 export const EventDetailPage = () => {
   const { id } = useParams();
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { showToast } = useToast();
 
   const [event, setEvent] = useState(null);
@@ -33,7 +35,7 @@ export const EventDetailPage = () => {
         const res = await eventService.getEventById(id);
         if (res?.data) {
           setEvent(res.data);
-          setIsRegistered(res.data.isRegistered);
+          setIsRegistered(res.data.isRegistered || false);
         }
       } catch (err) {
         console.error('Failed to load event detail:', err);
@@ -56,7 +58,7 @@ export const EventDetailPage = () => {
       setIsSubmitting(true);
       const res = await eventService.registerEvent(event.id);
       setIsRegistered(true);
-      showToast(res.message, 'success');
+      showToast(res.message || 'Pendaftaran event berhasil!', 'success');
       // Refresh event
       const refreshed = await eventService.getEventById(event.id);
       if (refreshed?.data) setEvent(refreshed.data);
@@ -70,7 +72,8 @@ export const EventDetailPage = () => {
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-10 space-y-6">
-        <Skeleton className="w-full h-80 rounded-2xl" />
+        <Skeleton className="w-1/3 h-6" />
+        <Skeleton className="w-full h-80 rounded-3xl" />
         <Skeleton className="w-2/3 h-8" />
         <Skeleton className="w-1/2 h-5" />
       </div>
@@ -79,9 +82,9 @@ export const EventDetailPage = () => {
 
   if (!event) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <h2 className="text-xl font-bold text-gray-800">Event tidak ditemukan.</h2>
-        <Link to="/event" className="text-[#075E54] font-medium hover:underline mt-2 inline-block">
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-3">
+        <h2 className="text-xl font-bold text-[#17211D]">Event tidak ditemukan.</h2>
+        <Link to="/event" className="text-[#075E54] font-bold hover:underline inline-block text-sm">
           ← Kembali ke Agenda Event
         </Link>
       </div>
@@ -95,160 +98,167 @@ export const EventDetailPage = () => {
     year: 'numeric',
   });
 
+  const isFull = event.currentParticipants >= event.quota;
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs text-gray-500">
-        <Link to="/" className="hover:text-[#075E54]">Beranda</Link>
-        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-        <Link to="/event" className="hover:text-[#075E54]">Event</Link>
-        <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-        <span className="font-semibold text-[#17211D] truncate max-w-xs">{event.title}</span>
-      </nav>
+      <Breadcrumb
+        items={[
+          { label: 'Event', link: '/event' },
+          { label: event.title },
+        ]}
+      />
 
       {/* Banner */}
-      <div className="relative aspect-[16/9] w-full rounded-2xl overflow-hidden bg-gray-100 shadow-sm border border-[#E5E7EB]">
-        <img
-          src={event.banner || 'https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=1000&auto=format&fit=crop&q=80'}
+      <div className="relative aspect-[16/9] w-full rounded-3xl overflow-hidden bg-[#E8F3EF] shadow-xs border border-[#E2E8E5]">
+        <ImageWithFallback
+          src={event.banner}
           alt={event.title}
+          fallbackIcon={Calendar}
+          fallbackText={event.title}
           className="w-full h-full object-cover"
         />
         <div className="absolute top-4 left-4 flex gap-2">
-          <span className="bg-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-md">
-            {event.category?.replace('_', ' ')}
+          <span className="bg-[#075E54] text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+            {event.category?.replace('_', ' ') || 'Workshop Literasi'}
           </span>
-          <span className="bg-white/95 text-gray-800 text-xs font-medium px-3 py-1 rounded-full shadow-md">
-            Audiens {event.audience}
-          </span>
+          {event.audience && (
+            <span className="bg-white/95 text-[#17211D] text-xs font-bold px-3 py-1 rounded-full shadow-md">
+              Audiens: {event.audience}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Header Info */}
       <div className="space-y-3">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#17211D] leading-tight">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#17211D] leading-tight">
           {event.title}
         </h1>
 
-        <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-gray-600">
-          <span className="flex items-center gap-1.5 font-medium text-[#075E54]">
+        <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-[#66736D]">
+          <span className="flex items-center gap-1.5 font-bold text-[#075E54]">
             <Calendar className="w-4 h-4" />
             {formattedDate}
           </span>
           <span className="flex items-center gap-1.5">
             <Clock className="w-4 h-4 text-gray-400" />
-            {event.startTime} - {event.endTime}
+            {event.startTime} - {event.endTime} WITA
           </span>
           <span className="flex items-center gap-1.5">
             <MapPin className="w-4 h-4 text-gray-400" />
-            {event.locationName}, {event.district}
+            {event.locationName}, {event.district ? `${event.district}, Sidrap` : 'Sidrap'}
           </span>
         </div>
       </div>
 
       {/* Main Grid: Details and Registration Box */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
         {/* Left 2 cols: Description */}
         <div className="md:col-span-2 space-y-6">
-          <div className="prose prose-sm text-gray-700 bg-white p-6 rounded-2xl border border-[#E5E7EB] shadow-xs">
-            <h3 className="text-base font-bold text-[#17211D] mb-3">Tentang Kegiatan</h3>
-            <p className="whitespace-pre-line leading-relaxed text-sm text-gray-600">
+          <div className="bg-white p-6 rounded-3xl border border-[#E2E8E5] shadow-xs space-y-4">
+            <h3 className="text-base font-bold text-[#17211D]">Tentang Kegiatan</h3>
+            <p className="whitespace-pre-line leading-relaxed text-xs sm:text-sm text-[#17211D]/80">
               {event.description}
             </p>
 
-            <h4 className="text-sm font-bold text-[#17211D] mt-6 mb-2">Lokasi Lengkap</h4>
-            <p className="text-xs text-gray-600 flex items-start gap-1.5">
-              <MapPin className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span>{event.address}, Kec. {event.district}, Kab. Sidenreng Rappang</span>
+            <h4 className="text-sm font-bold text-[#17211D] pt-4 border-t border-gray-100">
+              Lokasi Lengkap
+            </h4>
+            <p className="text-xs text-[#66736D] flex items-start gap-2">
+              <MapPin className="w-4 h-4 text-[#075E54] shrink-0 mt-0.5" />
+              <span>{event.address || event.locationName}, Kec. {event.district || 'Pangkajene'}, Kab. Sidrap</span>
             </p>
           </div>
 
           {/* Organizer Card */}
           {event.organizer && (
-            <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-xs flex items-center justify-between gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-[#E2E8E5] shadow-xs flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <img
-                  src={event.organizer.logo || 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=100&auto=format&fit=crop&q=80'}
-                  alt={event.organizer.organizationName}
-                  className="w-12 h-12 rounded-xl object-cover border border-emerald-100"
-                />
+                <div className="w-12 h-12 rounded-xl bg-[#E8F3EF] border border-[#cbe1d7] flex items-center justify-center shrink-0 overflow-hidden">
+                  <Building2 className="w-6 h-6 text-[#075E54]" />
+                </div>
                 <div>
-                  <p className="text-xs text-gray-400 font-medium uppercase">Penyelenggara</p>
-                  <h4 className="font-semibold text-sm text-[#17211D]">
-                    {event.organizer.organizationName}
+                  <p className="text-[10px] text-[#66736D] font-bold uppercase tracking-wider">Penyelenggara</p>
+                  <h4 className="font-bold text-sm text-[#17211D]">
+                    {typeof event.organizer === 'object' && event.organizer !== null
+                      ? event.organizer.name || event.organizer.organizationName || 'Penyelenggara Literasi'
+                      : event.organizer || 'Penyelenggara Literasi'}
                   </h4>
-                  <p className="text-xs text-gray-500">{event.organizer.district}, Sidrap</p>
+                  <p className="text-xs text-[#66736D]">Kabupaten Sidrap</p>
                 </div>
               </div>
-
-              {event.organizer.slug && (
-                <Link
-                  to={`/komunitas/${event.organizer.id}`}
-                  className="text-xs font-semibold text-[#075E54] hover:underline"
-                >
-                  Profil Penyelenggara →
-                </Link>
-              )}
             </div>
           )}
         </div>
 
         {/* Right 1 col: Registration Box */}
         <div className="space-y-4">
-          <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-sm space-y-4 sticky top-24">
+          <div className="bg-white p-5 rounded-3xl border border-[#E2E8E5] shadow-sm space-y-4 sticky top-24">
             <h3 className="font-bold text-sm text-[#17211D] border-b border-gray-100 pb-2.5">
               Pendaftaran Event
             </h3>
 
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-gray-500">Biaya:</span>
-                <span className="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">
+                <span className="text-[#66736D]">Biaya Partisipasi:</span>
+                <span className="font-bold text-[#075E54] bg-[#E8F3EF] px-2.5 py-0.5 rounded-full border border-[#cbe1d7]">
                   {event.isFree ? 'Gratis' : `Rp ${event.price?.toLocaleString('id-ID')}`}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-500">Kapasitas:</span>
-                <span className="font-medium text-[#17211D]">{event.quota} Peserta</span>
+                <span className="text-[#66736D]">Kapasitas Total:</span>
+                <span className="font-bold text-[#17211D]">{event.quota} Peserta</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-500">Terdaftar:</span>
-                <span className="font-medium text-[#075E54]">{event.currentParticipants} Peserta</span>
+                <span className="text-[#66736D]">Jumlah Terdaftar:</span>
+                <span className="font-bold text-[#075E54]">{event.currentParticipants} Peserta</span>
               </div>
             </div>
 
-            {/* Quota bar */}
+            {/* Quota Progress Bar */}
             <div className="space-y-1">
               <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                 <div
                   className="bg-[#075E54] h-2 rounded-full transition-all"
-                  style={{ width: `${Math.min(100, (event.currentParticipants / event.quota) * 100)}%` }}
+                  style={{ width: `${Math.min(100, (event.currentParticipants / (event.quota || 1)) * 100)}%` }}
                 />
               </div>
-              <p className="text-[11px] text-gray-400 text-right">
+              <p className="text-[11px] text-[#66736D] text-right">
                 Tersisa {Math.max(0, event.quota - event.currentParticipants)} kursi
               </p>
             </div>
 
+            {/* Registration CTA Statuses (Section 22) */}
             {isRegistered ? (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-center space-y-1">
-                <p className="text-xs font-semibold text-emerald-800 flex items-center justify-center gap-1">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  Anda Sudah Terdaftar!
+              <div className="p-3.5 rounded-2xl bg-[#E8F3EF] border border-[#cbe1d7] text-center space-y-1">
+                <p className="text-xs font-bold text-[#075E54] flex items-center justify-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-[#075E54]" />
+                  Anda Sudah Terdaftar
                 </p>
-                <p className="text-[11px] text-emerald-700">
-                  Tunjukkan konfirmasi ini saat tiba di lokasi acara.
+                <p className="text-[11px] text-[#075E54]/80">
+                  Konfirmasi kehadiran dapat Anda tunjukkan kepada petugas saat acara berlangsung.
                 </p>
               </div>
+            ) : isFull ? (
+              <Button
+                variant="outline"
+                size="md"
+                className="w-full font-bold text-gray-500 bg-gray-100 border-gray-200 cursor-not-allowed"
+                disabled={true}
+              >
+                Event Penuh
+              </Button>
             ) : (
               <Button
                 variant="primary"
                 size="md"
-                className="w-full"
-                disabled={event.currentParticipants >= event.quota}
+                className="w-full bg-[#075E54] hover:bg-[#05473F] text-white font-bold shadow-xs gap-1.5"
                 isLoading={isSubmitting}
                 onClick={handleRegister}
               >
-                {event.currentParticipants >= event.quota ? 'Kuota Penuh' : 'Daftar Event (+20 Poin)'}
+                <Calendar className="w-4 h-4" /> Daftar Event (+10 XP)
               </Button>
             )}
           </div>

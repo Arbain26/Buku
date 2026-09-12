@@ -1,17 +1,20 @@
 const express = require('express');
-const router = express.Router();
 const mitraController = require('../controllers/mitraController');
 const { authenticate } = require('../middleware/authMiddleware');
-const { authorize } = require('../middleware/roleMiddleware');
-const upload = require('../config/multer');
+const { requireMitra, requireApprovedMitra } = require('../middleware/roleMiddleware');
+const { uploadSingle } = require('../middleware/uploadMiddleware');
 
-// All mitra routes require authentication and MITRA role with status APPROVED
-router.use(authenticate, authorize('MITRA'));
+const router = express.Router();
 
-router.get('/dashboard', mitraController.getMitraDashboard);
-router.post('/inventory', upload.single('coverImage'), mitraController.addInventoryItem);
-router.put('/inventory/:id', mitraController.updateInventoryItem);
-router.delete('/inventory/:id', mitraController.deleteInventoryItem);
-router.put('/borrowings/:id/status', mitraController.updateBorrowingStatus);
+router.get('/profile', authenticate, requireMitra, mitraController.getMitraProfile);
+router.put('/profile', authenticate, requireMitra, uploadSingle('logo'), mitraController.updateMitraProfile);
+router.get('/dashboard', authenticate, requireMitra, mitraController.getMitraDashboard);
+router.get('/statistics', authenticate, requireMitra, mitraController.getMitraStatistics);
+
+// Kompatibilitas frontend Mitra: inventory & borrowing status
+router.post('/inventory', authenticate, requireApprovedMitra, uploadSingle('coverImage'), mitraController.addInventory);
+router.put('/inventory/:id', authenticate, requireApprovedMitra, mitraController.updateInventory);
+router.delete('/inventory/:id', authenticate, requireApprovedMitra, mitraController.deleteInventory);
+router.put('/borrowings/:id/status', authenticate, requireApprovedMitra, mitraController.updateBorrowingStatus);
 
 module.exports = router;

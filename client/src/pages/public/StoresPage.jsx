@@ -49,7 +49,7 @@ export const StoresPage = () => {
       </div>
 
       {/* Filter by district */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
         {districts.map((d) => (
           <button
             key={d}

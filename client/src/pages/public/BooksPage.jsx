@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, Filter, BookOpen } from 'lucide-react';
+import { Search, Filter, BookOpen, SlidersHorizontal } from 'lucide-react';
 import { bookService } from '../../services/dataServices';
 import { BookCard } from '../../components/cards/BookCard';
 import { CardSkeleton } from '../../components/common/Skeleton';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Pagination } from '../../components/common/Pagination';
+import { Select } from '../../components/common/Select';
+import { SearchBar } from '../../components/common/SearchBar';
+import { Drawer } from '../../components/common/Drawer';
+import { Button } from '../../components/common/Button';
 
 export const BooksPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -13,16 +18,17 @@ export const BooksPage = () => {
   const [categories, setCategories] = useState([]);
   const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1 });
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   const currentCategory = searchParams.get('category') || '';
   const currentSearch = searchParams.get('q') || '';
   const currentSort = searchParams.get('sort') || 'newest';
+  const currentAvailability = searchParams.get('availability') || '';
   const currentPage = parseInt(searchParams.get('page') || '1');
 
   const [searchInput, setSearchInput] = useState(currentSearch);
 
   useEffect(() => {
-    // Fetch categories
     bookService.getCategories().then((res) => {
       if (res?.data) setCategories(res.data);
     });
@@ -36,6 +42,7 @@ export const BooksPage = () => {
           search: currentSearch,
           category: currentCategory,
           sortBy: currentSort,
+          availability: currentAvailability,
           page: currentPage,
           limit: 12,
         });
@@ -53,13 +60,12 @@ export const BooksPage = () => {
     };
 
     fetchBooks();
-  }, [currentCategory, currentSearch, currentSort, currentPage]);
+  }, [currentCategory, currentSearch, currentSort, currentAvailability, currentPage]);
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
+  const handleSearchSubmit = (val) => {
     const params = new URLSearchParams(searchParams);
-    if (searchInput.trim()) {
-      params.set('q', searchInput.trim());
+    if (val && val.trim()) {
+      params.set('q', val.trim());
     } else {
       params.delete('q');
     }
@@ -67,147 +73,200 @@ export const BooksPage = () => {
     setSearchParams(params);
   };
 
-  const handleCategorySelect = (slug) => {
+  const handleFilterChange = (key, value) => {
     const params = new URLSearchParams(searchParams);
-    if (slug) {
-      params.set('category', slug);
+    if (value) {
+      params.set(key, value);
     } else {
-      params.delete('category');
+      params.delete(key);
     }
     params.set('page', '1');
     setSearchParams(params);
   };
 
-  const handleSortChange = (sortValue) => {
+  const handlePageChange = (page) => {
     const params = new URLSearchParams(searchParams);
-    params.set('sort', sortValue);
+    params.set('page', page.toString());
     setSearchParams(params);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const sortOptions = [
+    { value: 'newest', label: 'Terbaru' },
+    { value: 'popular', label: 'Terpopuler' },
+    { value: 'rating', label: 'Rating Tertinggi' },
+    { value: 'title_asc', label: 'Judul A - Z' },
+  ];
+
+  const availabilityOptions = [
+    { value: '', label: 'Semua Ketersediaan' },
+    { value: 'store', label: 'Tersedia di Toko Buku' },
+    { value: 'library', label: 'Tersedia di Perpustakaan' },
+  ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#17211D] tracking-tight">
-          Koleksi & Katalog Buku Sidrap
+      <div className="space-y-1">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#17211D] tracking-tight">
+          Temukan Buku
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Jelajahi buku bacaan berkualitas dari perpustakaan dan toko buku di seluruh Sidrap
+        <p className="text-xs sm:text-sm text-[#66736D]">
+          Jelajahi buku bacaan berkualitas dari perpustakaan daerah dan toko buku lokal di Sidrap
         </p>
       </div>
 
       {/* Filter and Search Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Search */}
-        <form onSubmit={handleSearchSubmit} className="relative w-full md:max-w-md">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
+      <div className="bg-white p-4 rounded-2xl border border-[#E2E8E5] shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+        {/* Search Bar */}
+        <div className="w-full md:max-w-md">
+          <SearchBar
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Cari judul, penulis, atau topik buku..."
-            className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+            onChange={setSearchInput}
+            onSubmit={handleSearchSubmit}
+            placeholder="Cari judul buku, penulis, atau topik..."
+            size="md"
           />
-        </form>
+        </div>
 
-        {/* Sort */}
-        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-          <span className="text-xs text-gray-400 font-medium">Urutkan:</span>
-          <select
-            value={currentSort}
-            onChange={(e) => handleSortChange(e.target.value)}
-            className="text-xs bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+        {/* Desktop Filters */}
+        <div className="hidden md:flex items-center gap-2.5 w-full md:w-auto">
+          {/* Availability Select */}
+          <div className="w-44">
+            <Select
+              value={currentAvailability}
+              onChange={(e) => handleFilterChange('availability', e.target.value)}
+              options={availabilityOptions}
+              placeholder={false}
+              className="py-2"
+            />
+          </div>
+
+          {/* Sort Select */}
+          <div className="w-40">
+            <Select
+              value={currentSort}
+              onChange={(e) => handleFilterChange('sort', e.target.value)}
+              options={sortOptions}
+              placeholder={false}
+              className="py-2"
+            />
+          </div>
+        </div>
+
+        {/* Mobile Filter Button */}
+        <div className="flex md:hidden w-full items-center justify-between gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsMobileFilterOpen(true)}
+            className="flex-1 justify-center gap-2 border-[#E2E8E5]"
           >
-            <option value="newest">Terbaru</option>
-            <option value="rating">Rating Tertinggi</option>
-            <option value="popular">Paling Populer</option>
-            <option value="title">Judul (A-Z)</option>
-          </select>
+            <SlidersHorizontal className="w-4 h-4 text-[#075E54]" />
+            <span>Filter & Urutkan</span>
+          </Button>
         </div>
       </div>
 
-      {/* Category Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      {/* Category Pills Slider */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 sm:mx-0 sm:px-0">
         <button
-          onClick={() => handleCategorySelect('')}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+          onClick={() => handleFilterChange('category', '')}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
             !currentCategory
               ? 'bg-[#075E54] text-white shadow-xs'
-              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              : 'bg-white border border-[#E2E8E5] text-[#66736D] hover:bg-gray-50'
           }`}
         >
           Semua Kategori
         </button>
-        {categories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => handleCategorySelect(cat.slug)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-              currentCategory === cat.slug
-                ? 'bg-[#075E54] text-white shadow-xs'
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            {cat.name}
-          </button>
-        ))}
+
+        {categories.map((cat) => {
+          const isSelected = currentCategory === cat.slug || currentCategory === cat.name;
+          return (
+            <button
+              key={cat.id}
+              onClick={() => handleFilterChange('category', cat.slug || cat.name)}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 ${
+                isSelected
+                  ? 'bg-[#075E54] text-white shadow-xs font-bold'
+                  : 'bg-white border border-[#E2E8E5] text-[#66736D] hover:bg-gray-50'
+              }`}
+            >
+              {cat.name}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Book Grid */}
+      {/* Books Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
+          {[...Array(8)].map((_, n) => (
             <CardSkeleton key={n} />
           ))}
         </div>
-      ) : books.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      ) : books.length === 0 ? (
+        <EmptyState
+          icon={BookOpen}
+          title="Buku Tidak Ditemukan"
+          description="Tidak ada buku yang sesuai dengan kriteria pencarian Anda. Coba gunakan kata kunci lain atau reset filter."
+          actionText="Reset Pencarian"
+          onAction={() => {
+            setSearchInput('');
+            setSearchParams({});
+          }}
+        />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-6">
           {books.map((book) => (
             <BookCard key={book.id} book={book} />
           ))}
         </div>
-      ) : (
-        <EmptyState
-          title="Tidak ada buku ditemukan"
-          description="Coba gunakan kata kunci lain atau pilih kategori yang berbeda."
-          actionText="Lihat Semua Buku"
-          onAction={() => {
-            setSearchInput('');
-            handleCategorySelect('');
-          }}
-        />
       )}
 
       {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-6">
-          <button
-            disabled={!pagination.hasPrevPage}
-            onClick={() => {
-              const params = new URLSearchParams(searchParams);
-              params.set('page', String(currentPage - 1));
-              setSearchParams(params);
-            }}
-            className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium disabled:opacity-40"
+      <div className="pt-6">
+        <Pagination
+          currentPage={pagination.currentPage}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
+        />
+      </div>
+
+      {/* Mobile Filter Drawer */}
+      <Drawer
+        isOpen={isMobileFilterOpen}
+        onClose={() => setIsMobileFilterOpen(false)}
+        title="Filter & Pengurutan Buku"
+        position="bottom"
+      >
+        <div className="space-y-4 py-2">
+          <Select
+            label="Ketersediaan Buku"
+            value={currentAvailability}
+            onChange={(e) => handleFilterChange('availability', e.target.value)}
+            options={availabilityOptions}
+            placeholder={false}
+          />
+
+          <Select
+            label="Urutkan Berdasarkan"
+            value={currentSort}
+            onChange={(e) => handleFilterChange('sort', e.target.value)}
+            options={sortOptions}
+            placeholder={false}
+          />
+
+          <Button
+            size="md"
+            className="w-full bg-[#075E54] text-white font-bold mt-4"
+            onClick={() => setIsMobileFilterOpen(false)}
           >
-            Sebelumnya
-          </button>
-          <span className="text-xs text-gray-500">
-            Halaman {pagination.currentPage} dari {pagination.totalPages}
-          </span>
-          <button
-            disabled={!pagination.hasNextPage}
-            onClick={() => {
-              const params = new URLSearchParams(searchParams);
-              params.set('page', String(currentPage + 1));
-              setSearchParams(params);
-            }}
-            className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium disabled:opacity-40"
-          >
-            Berikutnya
-          </button>
+            Terapkan Filter
+          </Button>
         </div>
-      )}
+      </Drawer>
     </div>
   );
 };

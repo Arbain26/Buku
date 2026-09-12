@@ -1,204 +1,154 @@
-const prisma = require('../config/db');
-const { successResponse, errorResponse } = require('../utils/responseHelper');
+const adminService = require('../services/admin.service');
+const userService = require('../services/user.service');
+const bookService = require('../services/book.service');
+const eventService = require('../services/event.service');
+const articleService = require('../services/article.service');
+const { successResponse, paginateResponse, errorResponse } = require('../utils/responseHelper');
 
-// Get overall platform dashboard stats
 const getAdminDashboard = async (req, res, next) => {
   try {
-    const [
-      totalUsers,
-      totalMitra,
-      totalBooks,
-      totalLibraries,
-      totalStores,
-      totalCommunities,
-      totalEvents,
-      totalArticles,
-      pendingMitraCount,
-    ] = await Promise.all([
-      prisma.user.count({ where: { role: 'USER' } }),
-      prisma.mitraProfile.count(),
-      prisma.book.count(),
-      prisma.mitraProfile.count({ where: { mitraType: 'PERPUSTAKAAN' } }),
-      prisma.mitraProfile.count({ where: { mitraType: 'TOKO_BUKU' } }),
-      prisma.mitraProfile.count({ where: { mitraType: 'KOMUNITAS' } }),
-      prisma.event.count(),
-      prisma.article.count(),
-      prisma.mitraProfile.count({ where: { status: 'PENDING' } }),
-    ]);
-
-    // Growth charts data
-    const growthData = [
-      { month: 'Mei', pengguna: 120, event: 4, peminjaman: 25, pemesanan: 18 },
-      { month: 'Jun', pengguna: 190, event: 7, peminjaman: 45, pemesanan: 30 },
-      { month: 'Jul', pengguna: 280, event: 11, peminjaman: 70, pemesanan: 55 },
-      { month: 'Agt', pengguna: 390, event: 14, peminjaman: 95, pemesanan: 78 },
-      { month: 'Sep', pengguna: 510, event: 18, peminjaman: 130, pemesanan: 110 },
-    ];
-
-    return successResponse(res, 'Statistik admin dashboard berhasil dimuat.', {
-      counts: {
-        totalUsers,
-        totalMitra,
-        totalBooks,
-        totalLibraries,
-        totalStores,
-        totalCommunities,
-        totalEvents,
-        totalArticles,
-        pendingMitraCount,
-      },
-      growthData,
-    });
+    const dashboard = await adminService.getAdminDashboard();
+    return successResponse(res, 'Statistik admin dashboard berhasil dimuat.', dashboard);
   } catch (error) {
     next(error);
   }
 };
 
-// Get pending mitra verification requests
-const getPendingMitra = async (req, res, next) => {
+const getAdminStatistics = async (req, res, next) => {
   try {
-    const pendingMitra = await prisma.mitraProfile.findMany({
-      where: { status: 'PENDING' },
-      include: {
-        user: {
-          select: { id: true, name: true, email: true, phone: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return successResponse(res, 'Daftar mitra pending berhasil dimuat.', pendingMitra);
+    const dashboard = await adminService.getAdminDashboard();
+    return successResponse(res, 'Statistik platform MABBACA berhasil dimuat.', dashboard);
   } catch (error) {
     next(error);
   }
 };
 
-// Verify mitra: Set to APPROVED or REJECTED
-const verifyMitra = async (req, res, next) => {
-  try {
-    const mitraId = parseInt(req.params.id);
-    const { status } = req.body; // APPROVED or REJECTED
-
-    if (!['APPROVED', 'REJECTED', 'SUSPENDED'].includes(status)) {
-      return errorResponse(res, 'Status verifikasi harus APPROVED, REJECTED, atau SUSPENDED.', 400);
-    }
-
-    const updated = await prisma.mitraProfile.update({
-      where: { id: mitraId },
-      data: {
-        status,
-        verifiedAt: status === 'APPROVED' ? new Date() : null,
-      },
-      include: { user: true },
-    });
-
-    // Send notification to mitra user
-    await prisma.notification.create({
-      data: {
-        userId: updated.userId,
-        title: status === 'APPROVED' ? 'Pendaftaran Mitra Disetujui!' : 'Status Pendaftaran Mitra',
-        message:
-          status === 'APPROVED'
-            ? `Selamat! Organisasi ${updated.organizationName} telah resmi disetujui sebagai Mitra MABBACA. Anda kini dapat mengakses dashboard mitra secara penuh.`
-            : `Pendaftaran organisasi ${updated.organizationName} telah ${status.toLowerCase()} oleh pengelola MABBACA.`,
-        type: status === 'APPROVED' ? 'SUCCESS' : 'WARNING',
-        linkUrl: '/mitra/dashboard',
-      },
-    });
-
-    return successResponse(
-      res,
-      `Mitra "${updated.organizationName}" berhasil diubah statusnya menjadi ${status}.`,
-      updated
-    );
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Literacy data statistics by Sidrap subdistricts
-const getLiteracyStatsByDistrict = async (req, res, next) => {
-  try {
-    const districts = [
-      'Pangkajene',
-      'Maritengngae',
-      'Baranti',
-      'Watang Pulu',
-      'Tellu Limpoe',
-      'Dua Pitue',
-      'Panca Rijang',
-      'Kulo',
-    ];
-
-    const stats = await Promise.all(
-      districts.map(async (district) => {
-        const [libraries, stores, communities, events] = await Promise.all([
-          prisma.mitraProfile.count({ where: { district, mitraType: 'PERPUSTAKAAN', status: 'APPROVED' } }),
-          prisma.mitraProfile.count({ where: { district, mitraType: 'TOKO_BUKU', status: 'APPROVED' } }),
-          prisma.mitraProfile.count({ where: { district, mitraType: 'KOMUNITAS', status: 'APPROVED' } }),
-          prisma.event.count({ where: { district } }),
-        ]);
-
-        return {
-          district,
-          perpustakaan: libraries,
-          tokoBuku: stores,
-          komunitas: communities,
-          event: events,
-          totalLiterasi: libraries + stores + communities + events,
-        };
-      })
-    );
-
-    return successResponse(res, 'Statistik ekosistem literasi per wilayah Sidrap berhasil dimuat.', stats);
-  } catch (error) {
-    next(error);
-  }
-};
-
-// Get all users
 const getAllUsers = async (req, res, next) => {
   try {
-    const { role, search } = req.query;
-    const where = {};
+    const { page = 1, limit = 10, search, role, district } = req.query;
+    const result = await userService.getUsers({ page, limit, search, role, district });
+    return paginateResponse(res, 'Daftar pengguna berhasil dimuat.', result.users, result.page, result.limit, result.total);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    if (role && role !== 'ALL') {
-      where.role = role;
+const getMitraList = async (req, res, next) => {
+  try {
+    const { status, page = 1, limit = 10, search } = req.query;
+    const result = await adminService.getMitraList({ status, page, limit, search });
+    return paginateResponse(res, 'Daftar mitra berhasil dimuat.', result.mitra, result.page, result.limit, result.total);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Kompatibilitas frontend Prompt 1: getPendingMitra
+const getPendingMitra = async (req, res, next) => {
+  try {
+    const result = await adminService.getMitraList({ status: 'PENDING', page: 1, limit: 100 });
+    return successResponse(res, 'Daftar mitra pending verifikasi berhasil dimuat.', result.mitra);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const approveMitra = async (req, res, next) => {
+  try {
+    const updated = await adminService.approveMitra(req.params.id);
+    return successResponse(res, 'Mitra berhasil disetujui.', updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const rejectMitra = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const updated = await adminService.rejectMitra(req.params.id, reason);
+    return successResponse(res, 'Mitra berhasil ditolak.', updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const suspendMitra = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const updated = await adminService.suspendMitra(req.params.id, reason);
+    return successResponse(res, 'Mitra berhasil ditangguhkan.', updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Kompatibilitas frontend Prompt 1: verifyMitra
+const verifyMitra = async (req, res, next) => {
+  try {
+    const { status, reason } = req.body;
+    if (status === 'APPROVED') {
+      const updated = await adminService.approveMitra(req.params.id);
+      return successResponse(res, 'Mitra berhasil diverifikasi dan disetujui.', updated);
+    } else if (status === 'REJECTED') {
+      const updated = await adminService.rejectMitra(req.params.id, reason);
+      return successResponse(res, 'Pendaftaran mitra berhasil ditolak.', updated);
+    } else if (status === 'SUSPENDED') {
+      const updated = await adminService.suspendMitra(req.params.id, reason);
+      return successResponse(res, 'Mitra berhasil ditangguhkan.', updated);
     }
+    return errorResponse(res, 'Status tidak valid. Gunakan APPROVED, REJECTED, atau SUSPENDED.', 400);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { email: { contains: search } },
-        { phone: { contains: search } },
-      ];
-    }
+const getEvents = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const result = await eventService.getEvents({ page, limit });
+    return paginateResponse(res, 'Daftar kegiatan literasi berhasil dimuat.', result.events, result.page, result.limit, result.total);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const users = await prisma.user.findMany({
-      where,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-        role: true,
-        points: true,
-        level: true,
-        district: true,
-        createdAt: true,
-        mitraProfile: {
-          select: {
-            id: true,
-            organizationName: true,
-            mitraType: true,
-            status: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
+const getBooks = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const result = await bookService.getBooks({ page, limit });
+    return paginateResponse(res, 'Daftar buku berhasil dimuat.', result.books, result.page, result.limit, result.total);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getArticles = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const result = await articleService.getArticles({ page, limit, status: null });
+    return paginateResponse(res, 'Daftar artikel berhasil dimuat.', result.articles, result.page, result.limit, result.total);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getReports = async (req, res, next) => {
+  try {
+    const reports = await adminService.getAdminReports();
+    return successResponse(res, 'Laporan ekosistem platform berhasil dimuat.', reports);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Kompatibilitas frontend Prompt 1: getLiteracyStats
+const getLiteracyStats = async (req, res, next) => {
+  try {
+    const dashboard = await adminService.getAdminDashboard();
+    return successResponse(res, 'Statistik literasi daerah berhasil dimuat.', {
+      growthData: dashboard.growthData,
+      districtStats: dashboard.districtStats,
     });
-
-    return successResponse(res, 'Daftar pengguna berhasil dimuat.', users);
   } catch (error) {
     next(error);
   }
@@ -206,8 +156,17 @@ const getAllUsers = async (req, res, next) => {
 
 module.exports = {
   getAdminDashboard,
-  getPendingMitra,
-  verifyMitra,
-  getLiteracyStatsByDistrict,
+  getAdminStatistics,
   getAllUsers,
+  getMitraList,
+  getPendingMitra,
+  approveMitra,
+  rejectMitra,
+  suspendMitra,
+  verifyMitra,
+  getEvents,
+  getBooks,
+  getArticles,
+  getReports,
+  getLiteracyStats,
 };

@@ -1,120 +1,65 @@
-const prisma = require('../config/db');
-const { successResponse, errorResponse } = require('../utils/responseHelper');
+const articleService = require('../services/article.service');
+const { successResponse, paginateResponse } = require('../utils/responseHelper');
 
-// Get all "Baca 5 Menit" articles
 const getArticles = async (req, res, next) => {
   try {
-    const { category, search, featured } = req.query;
-
-    const where = {};
-
-    if (featured === 'true') {
-      where.isFeatured = true;
-    }
-
-    if (category) {
-      where.category = { slug: category };
-    }
-
-    if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { excerpt: { contains: search } },
-        { content: { contains: search } },
-      ];
-    }
-
-    const articles = await prisma.article.findMany({
-      where,
-      include: {
-        category: true,
-        author: {
-          select: { id: true, name: true, avatar: true, level: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return successResponse(res, 'Daftar artikel Baca 5 Menit berhasil dimuat.', articles);
+    const { page = 1, limit = 10, search, category, status } = req.query;
+    const result = await articleService.getArticles({ page, limit, search, category, status });
+    return paginateResponse(res, 'Daftar artikel berhasil dimuat.', result.articles, result.page, result.limit, result.total);
   } catch (error) {
     next(error);
   }
 };
 
-// Get single article with related articles
-const getArticleById = async (req, res, next) => {
+const getArticleBySlug = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const articleId = isNaN(id) ? undefined : parseInt(id);
-    const slug = isNaN(id) ? id : undefined;
-
-    const where = articleId ? { id: articleId } : { slug };
-
-    const article = await prisma.article.findFirst({
-      where,
-      include: {
-        category: true,
-        author: {
-          select: { id: true, name: true, avatar: true, bio: true, level: true },
-        },
-      },
-    });
-
-    if (!article) {
-      return errorResponse(res, 'Artikel tidak ditemukan.', 404);
-    }
-
-    // Increment views
-    await prisma.article.update({
-      where: { id: article.id },
-      data: { views: { increment: 1 } },
-    });
-
-    // Award points if logged in and reading for the first time today
-    if (req.user) {
-      await prisma.user.update({
-        where: { id: req.user.id },
-        data: { points: { increment: 10 } },
-      });
-
-      await prisma.userActivity.create({
-        data: {
-          userId: req.user.id,
-          actionType: 'READ_ARTICLE',
-          referenceId: article.id,
-          pointsEarned: 10,
-          description: `Membaca artikel: "${article.title}"`,
-        },
-      });
-    }
-
-    // Related articles in same category
-    const relatedArticles = await prisma.article.findMany({
-      where: {
-        categoryId: article.categoryId,
-        id: { not: article.id },
-      },
-      take: 3,
-      include: { category: true },
-    });
-
-    return successResponse(res, 'Detail artikel berhasil dimuat.', {
-      ...article,
-      relatedArticles,
-    });
+    const userId = req.user ? req.user.id : null;
+    const article = await articleService.getArticleBySlugOrId(req.params.slug || req.params.id, userId);
+    return successResponse(res, 'Detail artikel berhasil dimuat.', article);
   } catch (error) {
     next(error);
   }
 };
 
-// Get article categories
-const getArticleCategories = async (req, res, next) => {
+const createArticle = async (req, res, next) => {
   try {
-    const categories = await prisma.articleCategory.findMany({
-      include: {
-        _count: { select: { articles: true } },
-      },
-    });
+    const article = await articleService.createArticle(req.user.id, req.body, req.file);
+    return successResponse(res, 'Artikel berhasil dibuat.', article, 201);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateArticle = async (req, res, next) => {
+  try {
+    const updated = await articleService.updateArticle(req.params.id, req.body, req.file);
+    return successResponse(res, 'Artikel berhasil diperbarui.', updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteArticle = async (req, res, next) => {
+  try {
+    await articleService.deleteArticle(req.params.id);
+    return successResponse(res, 'Artikel berhasil dihapus.');
+  } catch (error) {
+    next(error);
+  }
+};
+
+const publishArticle = async (req, res, next) => {
+  try {
+    const published = await articleService.publishArticle(req.params.id);
+    return successResponse(res, 'Artikel berhasil dipublikasikan.', published);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getCategories = async (req, res, next) => {
+  try {
+    const categories = await articleService.getArticleCategories();
     return successResponse(res, 'Kategori artikel berhasil dimuat.', categories);
   } catch (error) {
     next(error);
@@ -123,6 +68,10 @@ const getArticleCategories = async (req, res, next) => {
 
 module.exports = {
   getArticles,
-  getArticleById,
-  getArticleCategories,
+  getArticleBySlug,
+  createArticle,
+  updateArticle,
+  deleteArticle,
+  publishArticle,
+  getCategories,
 };

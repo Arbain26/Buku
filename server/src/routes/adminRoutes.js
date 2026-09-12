@@ -1,16 +1,25 @@
 const express = require('express');
-const router = express.Router();
 const adminController = require('../controllers/adminController');
 const { authenticate } = require('../middleware/authMiddleware');
-const { authorize } = require('../middleware/roleMiddleware');
+const { requireAdmin } = require('../middleware/roleMiddleware');
 
-// All admin routes require authentication and ADMIN role
-router.use(authenticate, authorize('ADMIN'));
+const router = express.Router();
+
+router.use(authenticate, requireAdmin);
 
 router.get('/dashboard', adminController.getAdminDashboard);
-router.get('/pending-mitra', adminController.getPendingMitra);
-router.put('/mitra/:id/verify', adminController.verifyMitra);
-router.get('/literacy-stats', adminController.getLiteracyStatsByDistrict);
+router.get('/statistics', adminController.getAdminStatistics);
 router.get('/users', adminController.getAllUsers);
+router.get('/mitra', adminController.getMitraList);
+router.get('/pending-mitra', adminController.getPendingMitra);
+router.put('/mitra/:id/approve', adminController.approveMitra);
+router.put('/mitra/:id/reject', adminController.rejectMitra);
+router.put('/mitra/:id/suspend', adminController.suspendMitra);
+router.put('/mitra/:id/verify', adminController.verifyMitra);
+router.get('/events', adminController.getEvents);
+router.get('/books', adminController.getBooks);
+router.get('/articles', adminController.getArticles);
+router.get('/reports', adminController.getReports);
+router.get('/literacy-stats', adminController.getLiteracyStats);
 
 module.exports = router;

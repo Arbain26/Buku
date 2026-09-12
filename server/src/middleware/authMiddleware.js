@@ -23,6 +23,10 @@ const authenticate = async (req, res, next) => {
       return errorResponse(res, 'Pengguna tidak ditemukan atau token tidak valid.', 401);
     }
 
+    if (!user.isActive || user.deletedAt) {
+      return errorResponse(res, 'Akun Anda telah dinonaktifkan atau ditangguhkan.', 401);
+    }
+
     req.user = user;
     next();
   } catch (error) {

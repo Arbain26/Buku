@@ -7,8 +7,9 @@ export const Badge = ({
 }) => {
   const variants = {
     default: 'bg-gray-100 text-gray-800 border-gray-200',
-    green: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    primary: 'bg-[#075E54]/10 text-[#075E54] border-[#075E54]/20',
+    green: 'bg-[#E8F3EF] text-[#075E54] border-[#cbe1d7]',
+    primary: 'bg-[#075E54] text-white border-[#075E54]',
+    soft: 'bg-[#E8F3EF] text-[#075E54] border-[#cbe1d7]',
     amber: 'bg-amber-50 text-amber-800 border-amber-200',
     red: 'bg-red-50 text-red-800 border-red-200',
     blue: 'bg-sky-50 text-sky-800 border-sky-200',
