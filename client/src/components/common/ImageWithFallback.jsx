@@ -1,6 +1,20 @@
 import React, { useState } from 'react';
 import { BookOpen, Image as ImageIcon } from 'lucide-react';
 
+export const resolveImageUrl = (url) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+    return url;
+  }
+  if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
+    const rawApi = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const backendBase = rawApi.replace(/\/api\/?$/, '');
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    return `${backendBase}${cleanPath}`;
+  }
+  return url;
+};
+
 export const ImageWithFallback = ({
   src,
   alt = '',
@@ -11,7 +25,9 @@ export const ImageWithFallback = ({
 }) => {
   const [hasError, setHasError] = useState(false);
 
-  if (!src || hasError) {
+  const resolvedSrc = resolveImageUrl(src);
+
+  if (!resolvedSrc || hasError) {
     return (
       <div
         className={`bg-[#E8F3EF] border border-[#cbe1d7] flex flex-col items-center justify-center text-center p-3 select-none text-[#075E54] ${className}`}
@@ -29,7 +45,7 @@ export const ImageWithFallback = ({
 
   return (
     <img
-      src={src}
+      src={resolvedSrc}
       alt={alt}
       className={className}
       onError={() => setHasError(true)}
@@ -38,3 +54,4 @@ export const ImageWithFallback = ({
     />
   );
 };
+
