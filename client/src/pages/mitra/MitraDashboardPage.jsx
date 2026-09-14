@@ -25,6 +25,7 @@ import {
   Layers,
   Search,
   Check,
+  BarChart3,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -94,17 +95,77 @@ export const MitraDashboardPage = () => {
   const mitraType = user?.mitraProfile?.mitraType || dashboardData?.profile?.mitraType || 'TOKO_BUKU';
   const mitraStatus = dashboardData?.profile?.status || user?.mitraProfile?.status || 'APPROVED';
 
+  // Profile Form State
+  const [profileForm, setProfileForm] = useState({
+    organizationName: '',
+    description: '',
+    address: '',
+    district: 'Pangkajene',
+    village: '',
+    phoneWa: '',
+    openHours: '08.00 - 17.00 WITA',
+  });
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  const districtsList = [
+    'Pangkajene',
+    'Maritengngae',
+    'Baranti',
+    'Watang Pulu',
+    'Tellu Limpoe',
+    'Dua Pitue',
+    'Panca Rijang',
+    'Kulo',
+    'Panca Lautang',
+    'Watang Sidenreng',
+    'Pitu Riase',
+  ];
+
   const fetchDashboard = async () => {
     try {
       setIsLoading(true);
       const res = await mitraService.getDashboard();
       if (res?.data) {
         setDashboardData(res.data);
+        const p = res.data.profile;
+        if (p) {
+          setProfileForm({
+            organizationName: p.organizationName || '',
+            description: p.description || '',
+            address: p.address || '',
+            district: p.district || 'Pangkajene',
+            village: p.village || '',
+            phoneWa: p.phoneWa || '',
+            openHours: p.openHours || '08.00 - 17.00 WITA',
+          });
+        }
       }
     } catch (err) {
       console.error('Failed to load mitra dashboard:', err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleProfileChange = (e) => {
+    setProfileForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    if (!profileForm.organizationName || !profileForm.address) {
+      showToast('Nama organisasi dan alamat lengkap wajib diisi.', 'error');
+      return;
+    }
+    try {
+      setIsUpdatingProfile(true);
+      const res = await mitraService.updateProfile(profileForm);
+      showToast(res?.message || 'Profil berhasil diperbarui!', 'success');
+      await fetchDashboard();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal memperbarui profil.', 'error');
+    } finally {
+      setIsUpdatingProfile(false);
     }
   };
 
@@ -462,23 +523,44 @@ export const MitraDashboardPage = () => {
           { id: 'dashboard', label: 'Ringkasan', icon: TrendingUp },
           { id: 'products', label: `Produk Toko (${products?.length || 0})`, icon: Package },
           { id: 'orders', label: `Pesanan Masuk (${orders?.length || 0})`, icon: ShoppingBag },
+          { id: 'profile', label: 'Profil Toko', icon: Building2 },
+          { id: 'stats', label: 'Statistik', icon: BarChart3 },
         ];
       case 'PERPUSTAKAAN':
         return [
           { id: 'dashboard', label: 'Ringkasan', icon: TrendingUp },
           { id: 'collections', label: `Koleksi Buku (${collections?.length || 0})`, icon: BookOpen },
           { id: 'borrowings', label: `Peminjaman Masuk (${borrowings?.length || 0})`, icon: ShoppingBag },
+          { id: 'profile', label: 'Profil Perpustakaan', icon: Building2 },
+          { id: 'stats', label: 'Statistik', icon: BarChart3 },
         ];
       case 'KOMUNITAS':
         return [
           { id: 'dashboard', label: 'Ringkasan', icon: TrendingUp },
           { id: 'members', label: `Anggota (${members?.length || 0})`, icon: Users },
           { id: 'events', label: `Agenda Kegiatan (${events?.length || 0})`, icon: Calendar },
+          { id: 'profile', label: 'Profil Komunitas', icon: Building2 },
+          { id: 'stats', label: 'Statistik', icon: BarChart3 },
+        ];
+      case 'SEKOLAH':
+        return [
+          { id: 'dashboard', label: 'Ringkasan', icon: TrendingUp },
+          { id: 'events', label: `Kegiatan Literasi (${events?.length || 0})`, icon: BookOpen },
+          { id: 'profile', label: 'Profil Sekolah', icon: Building2 },
+          { id: 'stats', label: 'Statistik', icon: BarChart3 },
+        ];
+      case 'PENGAJAR':
+        return [
+          { id: 'dashboard', label: 'Ringkasan', icon: TrendingUp },
+          { id: 'events', label: `Workshop / Kelas (${events?.length || 0})`, icon: Calendar },
+          { id: 'profile', label: 'Profil Pengajar', icon: GraduationCap },
+          { id: 'stats', label: 'Statistik', icon: BarChart3 },
         ];
       default:
         return [
           { id: 'dashboard', label: 'Ringkasan', icon: TrendingUp },
-          { id: 'events', label: `Agenda (${events?.length || 0})`, icon: Calendar },
+          { id: 'profile', label: 'Profil Mitra', icon: Building2 },
+          { id: 'stats', label: 'Statistik', icon: BarChart3 },
         ];
     }
   };
@@ -1384,6 +1466,271 @@ export const MitraDashboardPage = () => {
               description="Buat agenda lapak baca atau bedah buku untuk meramaikan gerakan membaca di Sidrap."
             />
           )}
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB: PROFILE (PROFIL TOKO / MITRA) */}
+      {/* ===================================================================== */}
+      {currentTab === 'profile' && (
+        <div className="space-y-6">
+          {/* Profile Overview Banner */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#E5E7EB] shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-emerald-50 text-[#075E54] border border-emerald-200 flex items-center justify-center shrink-0 shadow-inner">
+                {mitraType === 'TOKO_BUKU' ? (
+                  <Store className="w-8 h-8 sm:w-10 sm:h-10" />
+                ) : mitraType === 'PERPUSTAKAAN' ? (
+                  <Landmark className="w-8 h-8 sm:w-10 sm:h-10" />
+                ) : (
+                  <Building2 className="w-8 h-8 sm:w-10 sm:h-10" />
+                )}
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    Mitra {roleTitle}
+                  </span>
+                  <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Terverifikasi Resmi
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-[#17211D]">
+                  {profileForm.organizationName || user?.mitraProfile?.organizationName || user?.name}
+                </h2>
+                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5 flex-wrap">
+                  <span>📍 Kec. {profileForm.district}, Sidrap</span>
+                  <span>•</span>
+                  <span>🕒 {profileForm.openHours || '08.00 - 17.00 WITA'}</span>
+                  <span>•</span>
+                  <span>📱 {profileForm.phoneWa ? `+${profileForm.phoneWa}` : 'Belum ada nomor WA'}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Public Link Button if Toko Buku or Perpustakaan */}
+            {mitraType === 'TOKO_BUKU' && dashboardData?.profile?.store?.id && (
+              <a
+                href={`/literasi/toko/${dashboardData.profile.store.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#075E54] hover:bg-[#05473F] text-white text-xs font-bold transition-all shadow-xs shrink-0"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Kunjungi Halaman Publik Toko
+              </a>
+            )}
+            {mitraType === 'PERPUSTAKAAN' && dashboardData?.profile?.library?.id && (
+              <a
+                href={`/literasi/perpustakaan/${dashboardData.profile.library.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#075E54] hover:bg-[#05473F] text-white text-xs font-bold transition-all shadow-xs shrink-0"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Kunjungi Halaman Publik Perpustakaan
+              </a>
+            )}
+          </div>
+
+          {/* Edit Profile Form */}
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#E5E7EB] shadow-xs space-y-6">
+            <div className="border-b border-gray-100 pb-4">
+              <h3 className="font-bold text-base text-[#17211D]">
+                Kelola Informasi & Pengaturan Profil {roleTitle}
+              </h3>
+              <p className="text-xs text-gray-500">
+                Informasi ini akan ditampilkan kepada masyarakat Sidrap yang mencari buku dan literasi.
+              </p>
+            </div>
+
+            <form onSubmit={handleUpdateProfile} className="space-y-5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1.5">
+                    Nama {roleTitle} *
+                  </label>
+                  <input
+                    type="text"
+                    name="organizationName"
+                    value={profileForm.organizationName}
+                    onChange={handleProfileChange}
+                    required
+                    placeholder={`Contoh: ${mitraType === 'TOKO_BUKU' ? 'Toko Buku Sidrap Mandiri' : 'Perpustakaan Daerah Sidrap'}`}
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1.5">
+                    Nomor WhatsApp Bisnis / Transaksi *
+                  </label>
+                  <input
+                    type="text"
+                    name="phoneWa"
+                    value={profileForm.phoneWa}
+                    onChange={handleProfileChange}
+                    required
+                    placeholder="Contoh: 081234567890 atau 6281234567890"
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+                  />
+                  <span className="text-[11px] text-gray-400 mt-1 block">
+                    Digunakan untuk menerima pesanan buku otomatis dari warga via WhatsApp.
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1.5">
+                    Kecamatan Domisili di Sidrap *
+                  </label>
+                  <select
+                    name="district"
+                    value={profileForm.district}
+                    onChange={handleProfileChange}
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+                  >
+                    {districtsList.map((d) => (
+                      <option key={d} value={d}>
+                        Kecamatan {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1.5">
+                    Kelurahan / Desa
+                  </label>
+                  <input
+                    type="text"
+                    name="village"
+                    value={profileForm.village}
+                    onChange={handleProfileChange}
+                    placeholder="Contoh: Pangkajene"
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-gray-700 mb-1.5">
+                  Jam Operasional Layanan
+                </label>
+                <input
+                  type="text"
+                  name="openHours"
+                  value={profileForm.openHours}
+                  onChange={handleProfileChange}
+                  placeholder="Contoh: Senin - Sabtu: 08.00 - 21.00 WITA"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-gray-700 mb-1.5">
+                  Alamat Lengkap *
+                </label>
+                <textarea
+                  name="address"
+                  value={profileForm.address}
+                  onChange={handleProfileChange}
+                  required
+                  rows={2}
+                  placeholder="Jl. Jenderal Sudirman No. 12, Pangkajene, Kabupaten Sidenreng Rappang"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-gray-700 mb-1.5">
+                  Deskripsi / Profil Singkat {roleTitle}
+                </label>
+                <textarea
+                  name="description"
+                  value={profileForm.description}
+                  onChange={handleProfileChange}
+                  rows={3}
+                  placeholder={`Ceritakan tentang koleksi buku, layanan baca, atau spesialisasi ${roleTitle} Anda...`}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#075E54]"
+                />
+              </div>
+
+              {/* PIC Info Readonly */}
+              <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <span className="text-gray-400 font-medium">Penanggung Jawab Akun (PIC):</span>
+                  <p className="font-bold text-gray-800 text-sm mt-0.5">{user?.name}</p>
+                </div>
+                <div>
+                  <span className="text-gray-400 font-medium">Email Terdaftar:</span>
+                  <p className="font-semibold text-gray-700 text-sm mt-0.5">{user?.email}</p>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex items-center justify-end">
+                <Button
+                  type="submit"
+                  size="md"
+                  variant="primary"
+                  isLoading={isUpdatingProfile}
+                  className="px-6 gap-2"
+                >
+                  <Check className="w-4 h-4" /> Simpan Perubahan Profil
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB: STATS (STATISTIK) */}
+      {/* ===================================================================== */}
+      {currentTab === 'stats' && (
+        <div className="space-y-6">
+          <div className="bg-white p-6 sm:p-8 rounded-3xl border border-[#E5E7EB] shadow-xs space-y-4">
+            <div>
+              <h3 className="font-bold text-base text-[#17211D]">Statistik & Analisis Performa {roleTitle}</h3>
+              <p className="text-xs text-gray-500">
+                Data tren pesanan, aktivitas literasi, dan perputaran koleksi
+              </p>
+            </div>
+
+            {/* Recharts Area Chart */}
+            <div className="h-72 w-full pt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData || []}>
+                  <defs>
+                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#075E54" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#075E54" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+                  <XAxis dataKey="name" stroke="#9CA3AF" fontSize={11} tickLine={false} />
+                  <YAxis stroke="#9CA3AF" fontSize={11} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: '16px',
+                      border: '1px solid #E5E7EB',
+                      fontSize: '12px',
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#075E54"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#colorValue)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
       )}
 

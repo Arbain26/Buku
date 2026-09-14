@@ -34,7 +34,6 @@ export const Sidebar = ({ isMobileOpen, onClose, type = 'mitra' }) => {
       { name: 'Dashboard', path: '/mitra/dashboard', icon: LayoutDashboard },
       { name: 'Profil Toko', path: '/mitra/dashboard?tab=profile', icon: Building2 },
       { name: 'Produk Buku', path: '/mitra/dashboard?tab=products', icon: BookOpen },
-      { name: 'Stok', path: '/mitra/dashboard?tab=products', icon: Package },
       { name: 'Pesanan Masuk', path: '/mitra/dashboard?tab=orders', icon: ShoppingBag },
       { name: 'Statistik', path: '/mitra/dashboard?tab=stats', icon: BarChart3 },
     ];
@@ -112,8 +111,8 @@ export const Sidebar = ({ isMobileOpen, onClose, type = 'mitra' }) => {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 h-screen w-64 bg-[#075E54] text-white flex flex-col justify-between z-50 transition-transform duration-200 ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        className={`fixed top-0 left-0 bottom-0 h-screen w-64 bg-[#075E54] text-white flex flex-col justify-between z-40 transition-transform duration-200 shadow-xl lg:shadow-none ${
+          isMobileOpen ? 'translate-x-0 !z-50' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         <div className="flex-1 flex flex-col min-h-0">
