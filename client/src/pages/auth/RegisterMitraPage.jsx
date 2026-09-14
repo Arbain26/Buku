@@ -82,7 +82,11 @@ export const RegisterMitraPage = () => {
       showToast(res.message || 'Pendaftaran mitra berhasil!', 'success');
       navigate('/mitra/dashboard');
     } catch (err) {
-      const msg = err.response?.data?.message || 'Pendaftaran mitra gagal. Periksa kembali form.';
+      const msg =
+        err.response?.data?.message ||
+        (!err.response
+          ? 'Gagal terhubung ke server backend (port 5000). Pastikan server backend sedang aktif.'
+          : 'Pendaftaran mitra gagal. Periksa kembali form.');
       setErrorMessage(msg);
       showToast(msg, 'error');
     } finally {

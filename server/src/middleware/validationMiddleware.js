@@ -10,9 +10,11 @@ const validate = (req, res, next) => {
       value: err.value,
     }));
 
+    const firstMsg = formattedErrors[0]?.message;
+
     return res.status(422).json({
       success: false,
-      message: 'Validasi input gagal. Silakan periksa kembali data yang Anda kirimkan.',
+      message: firstMsg || 'Validasi input gagal. Silakan periksa kembali data yang Anda kirimkan.',
       errors: formattedErrors,
     });
   }

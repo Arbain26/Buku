@@ -13,12 +13,31 @@ const registerValidation = [
   body('name').trim().notEmpty().withMessage('Nama lengkap wajib diisi.'),
   body('email').isEmail().normalizeEmail().withMessage('Format email tidak valid.'),
   body('password').isLength({ min: 6 }).withMessage('Kata sandi minimal 6 karakter.'),
-  body('phone').optional().isMobilePhone('id-ID').withMessage('Format nomor HP Indonesia tidak valid.'),
+  body('phone')
+    .optional({ values: 'falsy' })
+    .custom((val) => {
+      if (!val || val.trim() === '') return true;
+      const cleaned = val.replace(/[\s\-\+]/g, '');
+      if (/^(62|08)[0-9]{8,13}$/.test(cleaned)) {
+        return true;
+      }
+      throw new Error('Format nomor HP tidak valid (contoh: 08123456789 atau 628123456789).');
+    }),
 ];
 
 // Validasi Register Mitra
 const registerMitraValidation = [
   ...registerValidation,
+  body('phoneWa')
+    .optional({ values: 'falsy' })
+    .custom((val) => {
+      if (!val || val.trim() === '') return true;
+      const cleaned = val.replace(/[\s\-\+]/g, '');
+      if (/^(62|08)[0-9]{8,13}$/.test(cleaned)) {
+        return true;
+      }
+      throw new Error('Format nomor WhatsApp tidak valid (contoh: 08123456789 atau 628123456789).');
+    }),
   body('mitraType')
     .isIn(['TOKO_BUKU', 'PERPUSTAKAAN', 'KOMUNITAS', 'SEKOLAH', 'PENGAJAR'])
     .withMessage('Jenis mitra tidak valid.'),

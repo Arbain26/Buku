@@ -43,7 +43,11 @@ export const AdminLoginPage = () => {
       showToast('Login Administrator berhasil. Selamat datang di Panel Pengelola.', 'success');
       navigate('/admin/dashboard');
     } catch (err) {
-      const msg = err.response?.data?.message || 'Login gagal. Periksa kembali email dan kata sandi admin.';
+      const msg =
+        err.response?.data?.message ||
+        (!err.response
+          ? 'Gagal terhubung ke server backend (port 5000). Pastikan server backend sedang aktif.'
+          : 'Login gagal. Periksa kembali email dan kata sandi admin.');
       setErrorMessage(msg);
       showToast(msg, 'error');
     } finally {
@@ -52,8 +56,8 @@ export const AdminLoginPage = () => {
   };
 
   const handleQuickFillAdmin = () => {
-    setEmail('admin@mabbaca.local');
-    setPassword('Admin123!');
+    setEmail('admin@mabbaca.id');
+    setPassword('admin123');
   };
 
   return (
@@ -128,7 +132,7 @@ export const AdminLoginPage = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@mabbaca.local"
+                  placeholder="admin@mabbaca.id"
                   required
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs bg-[#111A16] border border-emerald-900/80 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
@@ -173,7 +177,7 @@ export const AdminLoginPage = () => {
               Isi Otomatis Kredensial Admin Demo
             </button>
             <p className="text-[11px] text-gray-500 mt-2">
-              Akun: <code className="text-gray-400">admin@mabbaca.local</code> | Sandi: <code className="text-gray-400">Admin123!</code>
+              Akun: <code className="text-gray-400">admin@mabbaca.id</code> | Sandi: <code className="text-gray-400">admin123</code>
             </p>
           </div>
         </div>

@@ -37,7 +37,11 @@ export const LoginPage = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Login gagal. Periksa kembali email dan password.';
+      const msg =
+        err.response?.data?.message ||
+        (!err.response
+          ? 'Gagal terhubung ke server backend (port 5000). Pastikan server backend sedang aktif.'
+          : 'Login gagal. Periksa kembali email dan password.');
       setErrorMessage(msg);
       showToast(msg, 'error');
     } finally {

@@ -82,11 +82,11 @@ Aplikasi telah dilengkapi dengan seed data dan tombol pengisian cepat (*quick-fi
 
 | Role | Email | Password | Keterangan & Portal |
 |------|-------|----------|---------------------|
-| **ADMIN** | `admin@mabbaca.local` | `Admin123!` | Portal Khusus: `/admin/login`. Akses verifikasi mitra pending & data literasi per kecamatan |
-| **MITRA (TOKO)** | `mitra@mabbaca.local` | `Mitra123!` | Portal `/login`. Pengelola Toko Buku Sidrap Mandiri (Dashboard metrik, chart, inventaris) |
-| **MITRA (PERPUS)** | `perpus@mabbaca.local` | `Mitra123!` | Portal `/login`. Dinas Perpustakaan Daerah Sidrap (Koleksi & Peminjaman) |
-| **MITRA (KOMUNITAS)** | `komunitas@mabbaca.local` | `Mitra123!` | Portal `/login`. Ketua Komunitas Gerakan Sidrap Membaca |
-| **USER (WARGA)** | `user@mabbaca.local` | `User123!` | Portal `/login`. Andi Pratama (Level: Sahabat Buku, 420 Poin, Misi harian) |
+| **ADMIN** | `admin@mabbaca.id` | `admin123` | Portal Khusus: `/admin/login` atau `/login`. Akses verifikasi mitra pending & data literasi per kecamatan |
+| **MITRA (TOKO)** | `toko@mabbaca.id` | `mitra123` | Portal `/login`. Pengelola Toko Buku Sidrap Mandiri (Dashboard metrik, chart, inventaris) |
+| **MITRA (PERPUS)** | `perpus@mabbaca.id` | `mitra123` | Portal `/login`. Dinas Perpustakaan Daerah Sidrap (Koleksi & Peminjaman) |
+| **MITRA (KOMUNITAS)** | `komunitas@mabbaca.id` | `mitra123` | Portal `/login`. Ketua Komunitas Gerakan Sidrap Membaca |
+| **USER (WARGA)** | `user@mabbaca.id` | `user123` | Portal `/login`. Andi Muhammad Nur (Level: Pembaca Setia, 420 Poin, Misi harian) |
 
 > **Keamanan Akses Dashboard Admin**:  
 > Dashboard admin (`/admin/dashboard`) dilindungi secara ketat di sisi **Frontend (Guard `AdminRoute`)** dan **Backend (`authorize('ADMIN')`)**.  

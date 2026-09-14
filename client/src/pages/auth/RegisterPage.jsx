@@ -55,7 +55,11 @@ export const RegisterPage = () => {
       showToast(res.message || 'Pendaftaran akun berhasil!', 'success');
       navigate('/dashboard');
     } catch (err) {
-      const msg = err.response?.data?.message || 'Pendaftaran gagal. Mohon periksa kembali isian form.';
+      const msg =
+        err.response?.data?.message ||
+        (!err.response
+          ? 'Gagal terhubung ke server backend (port 5000). Pastikan server backend sedang aktif.'
+          : 'Pendaftaran gagal. Mohon periksa kembali isian form.');
       setErrorMessage(msg);
       showToast(msg, 'error');
     } finally {

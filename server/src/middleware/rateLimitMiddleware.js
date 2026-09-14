@@ -16,12 +16,12 @@ const generalLimiter = rateLimit({
 // Rate limiter ketat untuk rute otentikasi (mencegah brute force)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 menit
-  max: 30, // Maksimal 30 percobaan login/register per IP per 15 menit
+  max: process.env.NODE_ENV === 'development' ? 500 : 30, // Toleransi tinggi untuk mode pengembangan
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     success: false,
-    message: 'Terlalu banyak percobaan otentikasi. Silakan coba kembali setelah 15 menit.',
+    message: 'Terlalu banyak percobaan otentikasi. Silakan coba kembali setelah beberapa saat.',
   },
   skip: () => process.env.NODE_ENV === 'test',
 });
