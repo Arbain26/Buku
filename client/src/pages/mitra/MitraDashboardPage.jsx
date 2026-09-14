@@ -26,6 +26,7 @@ import {
   Search,
   Check,
   BarChart3,
+  Building2,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
