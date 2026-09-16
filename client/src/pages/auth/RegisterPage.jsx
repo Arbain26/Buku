@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, User, Mail, Lock, Phone, MapPin, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { BookOpen, User, Mail, Lock, Phone, MapPin, Sparkles, Eye, EyeOff, Building2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Button } from '../../components/common/Button';
@@ -80,11 +80,29 @@ export const RegisterPage = () => {
             </span>
           </Link>
           <h2 className="text-xl font-bold text-[#17211D]">
-            Daftar Sebagai Warga Pembaca
+            Daftar Akun Baru
           </h2>
           <p className="text-xs text-[#66736D]">
-            Dapatkan poin membaca, pinjam buku di perpustakaan, dan ikuti kegiatan literasi Sidrap
+            Pilih jenis akun yang sesuai dengan kebutuhan Anda di Sidrap
           </p>
+        </div>
+
+        {/* Role Selection Tabs */}
+        <div className="grid grid-cols-2 gap-2 p-1.5 bg-[#E8F3EF]/70 rounded-2xl border border-[#cbe1d7]">
+          <button
+            type="button"
+            className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all shadow-xs bg-[#075E54] text-white"
+          >
+            <User className="w-3.5 h-3.5" />
+            Warga Pembaca
+          </button>
+          <Link
+            to="/register-mitra"
+            className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all text-[#17211D] hover:text-[#075E54] hover:bg-white/80"
+          >
+            <Building2 className="w-3.5 h-3.5 text-[#0F766E]" />
+            Mitra Literasi
+          </Link>
         </div>
 
         {errorMessage && (
@@ -204,6 +222,20 @@ export const RegisterPage = () => {
             Buat Akun Pembaca (+25 XP)
           </Button>
         </form>
+
+        {/* Callout to Mitra Registration */}
+        <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 text-xs text-[#17211D] flex items-start gap-3">
+          <Building2 className="w-5 h-5 text-[#075E54] shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <span className="font-bold text-[#075E54]">Mewakili Toko, Perpustakaan, atau Komunitas?</span>
+            <p className="text-[11px] text-[#66736D] leading-relaxed">
+              Daftarkan organisasi Anda untuk membuka dashboard pengelola dan katalog publik.{' '}
+              <Link to="/register-mitra" className="font-extrabold text-[#075E54] underline hover:text-[#05473F]">
+                Daftar Sebagai Mitra Sidrap &rarr;
+              </Link>
+            </p>
+          </div>
+        </div>
 
         <div className="pt-2 text-center text-xs text-[#66736D] border-t border-gray-100">
           Sudah memiliki akun?{' '}

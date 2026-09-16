@@ -22,6 +22,7 @@ import {
   ShoppingBag,
   BookMarked,
   ArrowRight,
+  Building2,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { NotificationPanel } from './NotificationPanel';
@@ -91,6 +92,7 @@ export const Navbar = () => {
       items: [
         { name: 'Toko Buku', path: '/literasi/toko', icon: Store },
         { name: 'Perpustakaan', path: '/literasi/perpustakaan', icon: Landmark },
+        { name: 'Gabung Mitra', path: '/mitra', icon: Building2 },
       ],
     },
     { name: 'Event', path: '/event' },
@@ -526,6 +528,15 @@ export const Navbar = () => {
                   }`}
                 >
                   <FileText className="w-4 h-4 text-indigo-600" /> Baca 5 Menit
+                </Link>
+                <Link
+                  to="/mitra"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                    location.pathname === '/mitra' ? 'bg-[#E8F3EF] text-[#075E54] font-bold' : 'text-[#17211D] hover:bg-gray-50'
+                  }`}
+                >
+                  <Building2 className="w-4 h-4 text-[#0F766E]" /> Gabung Jadi Mitra
                 </Link>
                 <Link
                   to="/about"

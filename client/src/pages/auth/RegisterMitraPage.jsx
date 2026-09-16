@@ -114,6 +114,24 @@ export const RegisterMitraPage = () => {
           </p>
         </div>
 
+        {/* Role Selection Tabs */}
+        <div className="grid grid-cols-2 gap-2 p-1.5 bg-[#E8F3EF]/70 rounded-2xl border border-[#cbe1d7]">
+          <Link
+            to="/register"
+            className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-semibold transition-all text-[#17211D] hover:text-[#075E54] hover:bg-white/80"
+          >
+            <User className="w-3.5 h-3.5 text-[#075E54]" />
+            Warga Pembaca
+          </Link>
+          <button
+            type="button"
+            className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all shadow-xs bg-[#075E54] text-white"
+          >
+            <Building2 className="w-3.5 h-3.5" />
+            Mitra Literasi
+          </button>
+        </div>
+
         {/* Verification Alert */}
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
           <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -346,11 +364,19 @@ export const RegisterMitraPage = () => {
           </Button>
         </form>
 
-        <div className="pt-3 text-center text-xs text-[#66736D] border-t border-gray-100">
-          Sudah memiliki akun mitra?{' '}
-          <Link to="/login" className="font-bold text-[#075E54] hover:underline">
-            Masuk di Sini
-          </Link>
+        <div className="pt-3 text-center text-xs text-[#66736D] space-y-2 border-t border-gray-100">
+          <p>
+            Ingin mendaftar sebagai pembaca umum?{' '}
+            <Link to="/register" className="font-bold text-[#075E54] hover:underline">
+              Daftar Sebagai Warga Pembaca
+            </Link>
+          </p>
+          <p>
+            Sudah memiliki akun mitra?{' '}
+            <Link to="/login" className="font-bold text-[#075E54] hover:underline">
+              Masuk di Sini
+            </Link>
+          </p>
         </div>
       </div>
     </div>
