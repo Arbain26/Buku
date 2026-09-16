@@ -510,38 +510,6 @@ export const HomePage = () => {
           </div>
         )}
       </section>
-
-      {/* 8. CTA SECTION */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="rounded-3xl bg-gradient-to-r from-[#075E54] to-[#0F766E] p-8 sm:p-12 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 text-center md:text-left max-w-xl">
-            <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Literasi tumbuh ketika kita terhubung.
-            </h3>
-            <p className="text-xs sm:text-sm text-emerald-100 leading-relaxed">
-              Ayo temukan ruang belajar, bacaan, komunitas, dan kegiatan literasi di sekitar Anda. Bersama kita majukan ekosistem literasi masyarakat Sidrap.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
-            <Button
-              size="lg"
-              onClick={() => navigate('/buku')}
-              className="bg-white text-[#075E54] hover:bg-emerald-50 font-bold shadow-md"
-            >
-              Mulai Menjelajah
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => navigate('/mitra')}
-              className="border-white/40 text-white bg-white/10 hover:bg-white/20 font-semibold"
-            >
-              Gabung Sebagai Mitra
-            </Button>
-          </div>
-        </div>
-      </section>
     </div>
   );
 };
