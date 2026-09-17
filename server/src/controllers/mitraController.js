@@ -69,12 +69,17 @@ const addInventory = async (req, res, next) => {
     const slugBase = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const uniqueSlug = `${slugBase}-${Date.now().toString().slice(-4)}`;
 
-    // Buat Buku Utama jika belum ada
-    let book = await prisma.book.findFirst({
-      where: {
-        OR: [{ isbn: isbn || 'NON_EXISTENT_ISBN' }, { title: { equals: title } }],
-      },
-    });
+    let book = null;
+    if (req.body.bookId) {
+      book = await prisma.book.findUnique({ where: { id: parseInt(req.body.bookId) } });
+    }
+    if (!book) {
+      book = await prisma.book.findFirst({
+        where: {
+          OR: [{ isbn: isbn || 'NON_EXISTENT_ISBN' }, { title: { equals: title } }],
+        },
+      });
+    }
 
     if (!book) {
       book = await prisma.book.create({
@@ -122,11 +127,15 @@ const addInventory = async (req, res, next) => {
       const library = await prisma.library.findUnique({ where: { mitraId: mitra.id } });
       if (!library) return errorResponse(res, 'Data perpustakaan tidak ditemukan.', 404);
 
+      const resolvedQuantity = parseInt(quantity) || parseInt(req.body.totalStock) || parseInt(stock) || 1;
+      const resolvedShelf = shelfLocation || req.body.locationShelf || null;
+      const resolvedCallNumber = callNumber || req.body.callNumber || null;
+
       const collection = await libraryService.addLibraryCollection(library.id, {
         bookId: book.id,
-        callNumber,
-        quantity: parseInt(quantity) || 1,
-        shelfLocation,
+        callNumber: resolvedCallNumber,
+        quantity: resolvedQuantity,
+        shelfLocation: resolvedShelf,
         category: itemCategory,
       });
 

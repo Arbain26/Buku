@@ -70,7 +70,12 @@ export const MitraDashboardPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [addCoverFile, setAddCoverFile] = useState(null);
   const [addCoverPreview, setAddCoverPreview] = useState('');
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
+  const [catalogSearchResults, setCatalogSearchResults] = useState([]);
+  const [isSearchingCatalog, setIsSearchingCatalog] = useState(false);
+  const [selectedCatalogBook, setSelectedCatalogBook] = useState(null);
   const [inventoryForm, setInventoryForm] = useState({
+    bookId: '',
     title: '',
     author: '',
     categoryId: '1',
@@ -85,6 +90,7 @@ export const MitraDashboardPage = () => {
     totalStock: '5',
     locationShelf: 'Rak Utama',
     description: '',
+    coverImage: '',
   });
 
   // Edit Book/Inventory Modal State
@@ -259,6 +265,88 @@ export const MitraDashboardPage = () => {
   const handleRemoveAddCover = () => {
     setAddCoverFile(null);
     setAddCoverPreview('');
+    setInventoryForm((prev) => ({ ...prev, coverImage: '' }));
+  };
+
+  const handleCatalogSearch = async (query) => {
+    setCatalogSearchQuery(query);
+    if (!query || query.trim().length < 2) {
+      setCatalogSearchResults([]);
+      return;
+    }
+    try {
+      setIsSearchingCatalog(true);
+      const res = await bookService.getBooks({ search: query.trim(), limit: 6 });
+      if (res?.data) {
+        setCatalogSearchResults(res.data);
+      } else {
+        setCatalogSearchResults([]);
+      }
+    } catch (err) {
+      console.error('Error searching master book catalog:', err);
+    } finally {
+      setIsSearchingCatalog(false);
+    }
+  };
+
+  const handleSelectExistingBook = (book) => {
+    setSelectedCatalogBook(book);
+    setCatalogSearchResults([]);
+    setCatalogSearchQuery('');
+
+    // Pre-fill all metadata from existing book
+    setInventoryForm((prev) => ({
+      ...prev,
+      bookId: String(book.id),
+      title: book.title || '',
+      author: book.author || '',
+      categoryId: book.categoryId ? String(book.categoryId) : (book.category?.id ? String(book.category.id) : '1'),
+      publisher: book.publisher || '',
+      isbn: book.isbn || '',
+      publishYear: book.publishYear ? String(book.publishYear) : '2024',
+      pages: book.pages ? String(book.pages) : '',
+      language: book.language || 'Bahasa Indonesia',
+      description: book.description || '',
+      coverImage: book.coverImage || '',
+    }));
+
+    if (book.coverImage) {
+      setAddCoverPreview(resolveImageUrl(book.coverImage));
+      setAddCoverFile(null);
+    }
+
+    showToast(`Buku "${book.title}" dipilih! Data buku & sampul terisi otomatis.`, 'success');
+  };
+
+  const handleResetCatalogSelection = () => {
+    setSelectedCatalogBook(null);
+    setCatalogSearchQuery('');
+    setCatalogSearchResults([]);
+    setAddCoverFile(null);
+    setAddCoverPreview('');
+    setInventoryForm({
+      bookId: '',
+      title: '',
+      author: '',
+      categoryId: '1',
+      publisher: '',
+      isbn: '',
+      publishYear: '2024',
+      pages: '200',
+      language: 'Bahasa Indonesia',
+      price: '95000',
+      stock: '10',
+      callNumber: '',
+      totalStock: '5',
+      locationShelf: 'Rak Utama',
+      description: '',
+      coverImage: '',
+    });
+  };
+
+  const handleOpenAddModal = () => {
+    handleResetCatalogSelection();
+    setIsAddModalOpen(true);
   };
 
   const handleAddInventory = async (e) => {
@@ -272,35 +360,20 @@ export const MitraDashboardPage = () => {
       setIsSubmitting(true);
       const fd = new FormData();
       Object.keys(inventoryForm).forEach((key) => {
-        if (inventoryForm[key] !== null && inventoryForm[key] !== undefined) {
+        if (inventoryForm[key] !== null && inventoryForm[key] !== undefined && inventoryForm[key] !== '') {
           fd.append(key, inventoryForm[key]);
         }
       });
       if (addCoverFile) {
         fd.append('coverImage', addCoverFile);
+      } else if (inventoryForm.coverImage) {
+        fd.append('coverImage', inventoryForm.coverImage);
       }
 
       const res = await mitraService.addInventory(fd);
       showToast(res.message || 'Item berhasil ditambahkan ke inventaris!', 'success');
       setIsAddModalOpen(false);
-      setAddCoverFile(null);
-      setAddCoverPreview('');
-      setInventoryForm({
-        title: '',
-        author: '',
-        categoryId: '1',
-        publisher: '',
-        isbn: '',
-        publishYear: '2024',
-        pages: '200',
-        language: 'Bahasa Indonesia',
-        price: '95000',
-        stock: '10',
-        callNumber: '',
-        totalStock: '5',
-        locationShelf: 'Rak Utama',
-        description: '',
-      });
+      handleResetCatalogSelection();
       fetchDashboard();
     } catch (err) {
       showToast(err.response?.data?.message || 'Gagal menambahkan buku.', 'error');
@@ -915,7 +988,7 @@ export const MitraDashboardPage = () => {
           <Button
             size="md"
             variant="primary"
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenAddModal}
             className="shrink-0"
           >
             <Plus className="w-4 h-4" />
@@ -1259,7 +1332,7 @@ export const MitraDashboardPage = () => {
                   className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
                 />
               </div>
-              <Button size="sm" onClick={() => setIsAddModalOpen(true)}>
+              <Button size="sm" onClick={handleOpenAddModal}>
                 <Plus className="w-3.5 h-3.5" /> Tambah
               </Button>
             </div>
@@ -1337,7 +1410,7 @@ export const MitraDashboardPage = () => {
               title="Belum ada produk di inventaris"
               description="Tambahkan buku pertama Anda untuk mulai menerima pesanan dari masyarakat Sidrap."
               actionText="Tambah Buku Sekarang"
-              onAction={() => setIsAddModalOpen(true)}
+              onAction={handleOpenAddModal}
             />
           )}
         </div>
@@ -1366,7 +1439,7 @@ export const MitraDashboardPage = () => {
                   className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
                 />
               </div>
-              <Button size="sm" onClick={() => setIsAddModalOpen(true)}>
+              <Button size="sm" onClick={handleOpenAddModal}>
                 <Plus className="w-3.5 h-3.5" /> Tambah
               </Button>
             </div>
@@ -1436,7 +1509,7 @@ export const MitraDashboardPage = () => {
               title="Belum ada koleksi buku"
               description="Daftarkan koleksi buku perpustakaan untuk memudahkan pencarian masyarakat."
               actionText="Tambah Koleksi Sekarang"
-              onAction={() => setIsAddModalOpen(true)}
+              onAction={handleOpenAddModal}
             />
           )}
         </div>
@@ -2081,9 +2154,133 @@ export const MitraDashboardPage = () => {
         title={mitraType === 'TOKO_BUKU' ? 'Tambah Produk Buku ke Toko' : 'Tambah Koleksi Perpustakaan'}
       >
         <form onSubmit={handleAddInventory} className="space-y-4 text-xs">
+          {/* ========================================================= */}
+          {/* FITUR AUTO-FILL: CARI DARI KATALOG MASTER MABBACA */}
+          {/* ========================================================= */}
+          <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/70 text-gray-800 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-[#075E54]">
+                <Sparkles className="w-4 h-4 shrink-0 text-[#075E54]" />
+                <span className="font-bold text-xs text-[#075E54]">
+                  💡 Auto-Fill: Pilih dari Master Katalog MABBACA
+                </span>
+              </div>
+              {selectedCatalogBook && (
+                <button
+                  type="button"
+                  onClick={handleResetCatalogSelection}
+                  className="text-[11px] font-semibold text-red-600 hover:text-red-700 underline"
+                >
+                  Reset / Ganti Buku
+                </button>
+              )}
+            </div>
+
+            <p className="text-[11px] text-gray-600 leading-relaxed">
+              Jika buku sudah pernah diinput oleh Toko Buku atau mitra lain, Anda{' '}
+              <strong className="text-emerald-800 font-semibold">TIDAK PERLU upload ulang sampul atau mengetik ulang keterangan</strong>!
+              Cari judul buku di bawah, klik untuk memilih, dan semua data langsung terisi otomatis.
+            </p>
+
+            {selectedCatalogBook ? (
+              <div className="flex items-center gap-3 p-2.5 rounded-xl bg-white border border-emerald-300 shadow-2xs">
+                {selectedCatalogBook.coverImage ? (
+                  <img
+                    src={resolveImageUrl(selectedCatalogBook.coverImage)}
+                    alt={selectedCatalogBook.title}
+                    className="w-10 h-14 object-cover rounded-lg border border-gray-200 shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-14 rounded-lg bg-gray-100 flex items-center justify-center shrink-0 text-gray-400">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold text-[10px]">
+                      ✓ Master ID: #{selectedCatalogBook.id}
+                    </span>
+                    <span className="font-semibold text-gray-900 text-xs truncate">
+                      {selectedCatalogBook.title}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 truncate">
+                    Penulis: {selectedCatalogBook.author || '-'} {selectedCatalogBook.publisher ? `• Penerbit: ${selectedCatalogBook.publisher}` : ''}
+                  </p>
+                  <p className="text-[10px] text-emerald-700 font-medium mt-0.5">
+                    Sampul & deskripsi terisi otomatis. Cukup isi{' '}
+                    {mitraType === 'TOKO_BUKU' ? 'Harga & Stok Jual' : 'Nomor Panggil, Stok Koleksi & Lokasi Rak'} di bawah.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="relative">
+                <div className="relative">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={catalogSearchQuery}
+                    onChange={(e) => handleCatalogSearch(e.target.value)}
+                    placeholder="Ketik judul buku, penulis, atau ISBN (contoh: Filosofi Teras, Laskar Pelangi)..."
+                    className="w-full pl-9 pr-8 py-2 rounded-xl border border-emerald-300 bg-white text-xs focus:ring-2 focus:ring-[#075E54]/20 focus:border-[#075E54]"
+                  />
+                  {isSearchingCatalog && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="w-3.5 h-3.5 border-2 border-[#075E54] border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Dropdown Hasil Pencarian */}
+                {catalogSearchResults.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto divide-y divide-gray-100">
+                    {catalogSearchResults.map((b) => (
+                      <div
+                        key={b.id}
+                        onClick={() => handleSelectExistingBook(b)}
+                        className="flex items-center gap-3 p-2.5 hover:bg-emerald-50/70 cursor-pointer transition-colors"
+                      >
+                        {b.coverImage ? (
+                          <img
+                            src={resolveImageUrl(b.coverImage)}
+                            alt={b.title}
+                            className="w-9 h-12 object-cover rounded border border-gray-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-9 h-12 rounded bg-gray-100 flex items-center justify-center shrink-0 text-gray-400">
+                            <BookOpen className="w-4 h-4" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-800 text-xs truncate">{b.title}</p>
+                          <p className="text-[10px] text-gray-500 truncate">
+                            {b.author} {b.publisher ? `• ${b.publisher}` : ''} {b.publishYear ? `(${b.publishYear})` : ''}
+                          </p>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-semibold text-[10px] shrink-0 hover:bg-emerald-700">
+                          Pilih Buku ↵
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {catalogSearchQuery.trim().length >= 2 && !isSearchingCatalog && catalogSearchResults.length === 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-xl shadow-lg p-3 text-center text-gray-500 text-xs">
+                    Buku tidak ditemukan di katalog. Anda dapat langsung mengisinya secara manual di form bawah.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-medium text-gray-700 mb-1">Judul Buku *</label>
+              <label className="block font-medium text-gray-700 mb-1">
+                Judul Buku *
+                {selectedCatalogBook && (
+                  <span className="text-[10px] text-emerald-700 font-semibold ml-1.5">(Auto-fill)</span>
+                )}
+              </label>
               <input
                 type="text"
                 name="title"
@@ -2095,7 +2292,12 @@ export const MitraDashboardPage = () => {
               />
             </div>
             <div>
-              <label className="block font-medium text-gray-700 mb-1">Penulis *</label>
+              <label className="block font-medium text-gray-700 mb-1">
+                Penulis *
+                {selectedCatalogBook && (
+                  <span className="text-[10px] text-emerald-700 font-semibold ml-1.5">(Auto-fill)</span>
+                )}
+              </label>
               <input
                 type="text"
                 name="author"
@@ -2306,7 +2508,13 @@ export const MitraDashboardPage = () => {
                   )}
                 </div>
                 <p className="text-[11px] text-gray-500">
-                  Pilih file gambar sampul dari perangkat (JPG, PNG, atau WebP, maks. 5MB).
+                  {selectedCatalogBook && !addCoverFile ? (
+                    <span className="text-emerald-700 font-medium">
+                      ✓ Menggunakan sampul resmi dari Master Katalog MABBACA (tidak perlu upload ulang). Anda tetap dapat menggantinya jika diinginkan.
+                    </span>
+                  ) : (
+                    'Pilih file gambar sampul dari perangkat (JPG, PNG, atau WebP, maks. 5MB).'
+                  )}
                 </p>
               </div>
             </div>
