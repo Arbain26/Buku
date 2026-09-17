@@ -42,6 +42,17 @@ export const AuthProvider = ({ children }) => {
     return res;
   };
 
+  const adminLogin = async (email, password) => {
+    const res = await authService.adminLogin({ email, password });
+    if (res.success && res.data) {
+      setUser(res.data.user);
+      setToken(res.data.token);
+      localStorage.setItem('mabbaca_token', res.data.token);
+      localStorage.setItem('mabbaca_user', JSON.stringify(res.data.user));
+    }
+    return res;
+  };
+
   const register = async (data) => {
     const res = await authService.register(data);
     if (res.success && res.data) {
@@ -94,6 +105,7 @@ export const AuthProvider = ({ children }) => {
         isMitra: user?.role === 'MITRA',
         isApprovedMitra: user?.role === 'MITRA' && user?.mitraProfile?.status === 'APPROVED',
         login,
+        adminLogin,
         register,
         registerMitra,
         logout,

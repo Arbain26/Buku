@@ -234,7 +234,7 @@ class AuthService {
   }
 
   // Login
-  async login({ email, password }) {
+  async login({ email, password, allowAdmin = false }) {
     const cleanEmail = email ? email.trim().toLowerCase() : '';
     const user = await prisma.user.findUnique({
       where: { email: cleanEmail },
@@ -257,6 +257,15 @@ class AuthService {
 
     if (!user.isActive) {
       const error = new Error('Akun Anda telah dinonaktifkan. Silakan hubungi Administrator.');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    // Keamanan Ketat: Cegah akun Admin masuk melalui form publik regular
+    if (!allowAdmin && user.role === 'ADMIN') {
+      const error = new Error(
+        'Akses ditolak: Akun Administrator dilarang masuk melalui form login publik demi keamanan. Silakan gunakan portal khusus administrator.'
+      );
       error.statusCode = 403;
       throw error;
     }
@@ -300,6 +309,17 @@ class AuthService {
       token,
       user: sanitizedUser,
     };
+  }
+
+  // Dedicated Admin Login dengan verifikasi ketat role ADMIN
+  async adminLogin({ email, password }) {
+    const result = await this.login({ email, password, allowAdmin: true });
+    if (result.user.role !== 'ADMIN') {
+      const error = new Error('Akses ditolak: Portal ini hanya diperuntukkan bagi akun Administrator sistem.');
+      error.statusCode = 403;
+      throw error;
+    }
+    return result;
   }
 
   // Get Me

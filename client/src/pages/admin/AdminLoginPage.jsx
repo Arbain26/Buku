@@ -7,7 +7,7 @@ import { Button } from '../../components/common/Button';
 
 export const AdminLoginPage = () => {
   const navigate = useNavigate();
-  const { login, user, isAdmin, logout } = useAuth();
+  const { adminLogin, user, isAdmin, logout } = useAuth();
   const { showToast } = useToast();
 
   const [email, setEmail] = useState('');
@@ -30,7 +30,7 @@ export const AdminLoginPage = () => {
     try {
       setIsLoading(true);
       setErrorMessage('');
-      const res = await login(email, password);
+      const res = await adminLogin(email, password);
 
       if (res.data?.user?.role !== 'ADMIN') {
         // Not an admin!

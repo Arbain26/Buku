@@ -30,7 +30,10 @@ export const LoginPage = () => {
       showToast(res.message || 'Berhasil masuk ke akun Anda!', 'success');
 
       if (res.data?.user?.role === 'ADMIN') {
-        navigate('/admin/dashboard');
+        logout();
+        setErrorMessage('Akses Ditolak: Halaman ini hanya untuk Warga Pembaca dan Mitra Literasi. Akun Administrator dilarang masuk dari halaman ini demi keamanan.');
+        showToast('Akses ditolak. Silakan gunakan portal khusus administrator.', 'error');
+        return;
       } else if (res.data?.user?.role === 'MITRA') {
         navigate('/mitra/dashboard');
       } else {
@@ -142,14 +145,7 @@ export const LoginPage = () => {
           <p className="text-[11px] font-bold text-[#075E54] uppercase tracking-wider flex items-center gap-1">
             <Sparkles className="w-3.5 h-3.5" /> Akun Uji Coba Cepat (Demo Seed)
           </p>
-          <div className="grid grid-cols-3 gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => handleQuickFill('admin@mabbaca.id', 'admin123')}
-              className="py-1.5 px-2 bg-white rounded-lg border border-[#cbe1d7] text-[11px] font-bold text-gray-700 hover:bg-[#075E54] hover:text-white transition-colors"
-            >
-              👑 Admin
-            </button>
+          <div className="grid grid-cols-2 gap-2 pt-1">
             <button
               type="button"
               onClick={() => handleQuickFill('toko@mabbaca.id', 'mitra123')}

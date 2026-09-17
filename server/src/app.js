@@ -36,10 +36,22 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Keamanan HTTP Headers dengan Helmet (mengizinkan cross-origin image sharing untuk uploads)
+// Nonaktifkan header X-Powered-By untuk menyembunyikan identitas stack server backend
+app.disable('x-powered-by');
+
+// Keamanan HTTP Headers dengan Helmet
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
+    frameguard: { action: 'deny' }, // Mencegah serangan clickjacking
+    noSniff: true, // Mencegah MIME-type sniffing
+    xssFilter: true, // Proteksi Cross-Site Scripting (XSS)
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true,
+    },
   })
 );
 

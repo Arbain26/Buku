@@ -86,11 +86,6 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/admin/login" className="text-amber-400 hover:text-amber-300 transition-colors">
-                  Portal Masuk Admin
-                </Link>
-              </li>
-              <li>
                 <span className="text-gray-500">Bantuan & FAQ</span>
               </li>
               <li>

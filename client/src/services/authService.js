@@ -16,6 +16,11 @@ export const authService = {
     return res.data;
   },
 
+  async adminLogin(credentials) {
+    const res = await api.post('/auth/admin-login', credentials);
+    return res.data;
+  },
+
   async getMe() {
     const res = await api.get('/auth/me');
     return res.data;

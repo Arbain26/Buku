@@ -3,10 +3,16 @@ const { body } = require('express-validator');
 const authController = require('../controllers/authController');
 const { authenticate } = require('../middleware/authMiddleware');
 const { validate } = require('../middleware/validationMiddleware');
-const { authLimiter } = require('../middleware/rateLimitMiddleware');
+const { authLimiter, adminAuthLimiter, registerLimiter } = require('../middleware/rateLimitMiddleware');
 const { uploadSingle } = require('../middleware/uploadMiddleware');
 
 const router = express.Router();
+
+// Validasi Login
+const loginValidation = [
+  body('email').isEmail().normalizeEmail().withMessage('Format email tidak valid.'),
+  body('password').notEmpty().withMessage('Kata sandi wajib diisi.'),
+];
 
 // Validasi Register
 const registerValidation = [
@@ -44,9 +50,10 @@ const registerMitraValidation = [
   body('organizationName').trim().notEmpty().withMessage('Nama organisasi / institusi wajib diisi.'),
 ];
 
-router.post('/register', authLimiter, registerValidation, validate, authController.register);
-router.post('/register-mitra', authLimiter, registerMitraValidation, validate, authController.registerMitra);
-router.post('/login', authLimiter, authController.login);
+router.post('/register', registerLimiter, registerValidation, validate, authController.register);
+router.post('/register-mitra', registerLimiter, registerMitraValidation, validate, authController.registerMitra);
+router.post('/login', authLimiter, loginValidation, validate, authController.login);
+router.post('/admin-login', adminAuthLimiter, loginValidation, validate, authController.adminLogin);
 router.post('/logout', authController.logout);
 router.get('/me', authenticate, authController.getMe);
 router.put('/profile', authenticate, uploadSingle('avatar'), authController.updateProfile);

@@ -37,6 +37,19 @@ const login = async (req, res, next) => {
   }
 };
 
+const adminLogin = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return errorResponse(res, 'Email dan kata sandi administrator wajib diisi.', 400);
+    }
+    const result = await authService.adminLogin({ email, password });
+    return successResponse(res, 'Login Administrator berhasil. Selamat datang di Panel Pengelola!', result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const logout = async (req, res) => {
   // JWT bersifat stateless; logout di-handle di sisi client dengan menghapus token
   return successResponse(res, 'Logout berhasil. Sesi telah diakhiri.');
@@ -77,6 +90,7 @@ module.exports = {
   register,
   registerMitra,
   login,
+  adminLogin,
   logout,
   getMe,
   updateProfile,
