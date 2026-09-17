@@ -53,6 +53,10 @@ const addInventory = async (req, res, next) => {
       categoryId,
       isbn,
       description,
+      publisher,
+      publishYear,
+      pages,
+      language,
       price,
       stock,
       quantity,
@@ -78,17 +82,29 @@ const addInventory = async (req, res, next) => {
           title,
           slug: uniqueSlug,
           author,
+          publisher: publisher || null,
+          publishYear: publishYear ? parseInt(publishYear) : null,
+          pages: pages ? parseInt(pages) : null,
+          language: language || 'Bahasa Indonesia',
           isbn: isbn || null,
           description: description || 'Deskripsi buku belum ditambahkan.',
           coverImage,
           categoryId: parseInt(categoryId) || 1,
         },
       });
-    } else if (coverImage && (!book.coverImage || book.coverImage !== coverImage)) {
-      await prisma.book.update({
-        where: { id: book.id },
-        data: { coverImage },
-      });
+    } else {
+      const bookPatch = {};
+      if (coverImage && (!book.coverImage || book.coverImage !== coverImage)) bookPatch.coverImage = coverImage;
+      if (publisher && !book.publisher) bookPatch.publisher = publisher;
+      if (publishYear && !book.publishYear) bookPatch.publishYear = parseInt(publishYear);
+      if (pages && !book.pages) bookPatch.pages = parseInt(pages);
+      if (language && !book.language) bookPatch.language = language;
+      if (Object.keys(bookPatch).length > 0) {
+        await prisma.book.update({
+          where: { id: book.id },
+          data: bookPatch,
+        });
+      }
     }
 
     if (mitra.mitraType === 'TOKO_BUKU') {
@@ -135,6 +151,10 @@ const updateInventory = async (req, res, next) => {
       categoryId,
       isbn,
       description,
+      publisher,
+      publishYear,
+      pages,
+      language,
       price,
       stock,
       quantity,
@@ -183,7 +203,7 @@ const updateInventory = async (req, res, next) => {
       return errorResponse(res, 'Tipe mitra tidak valid.', 400);
     }
 
-    // Perbarui data Buku induk (Judul, Penulis, Sinopsis, Kategori, Cover Image) jika ada
+    // Perbarui data Buku induk (Judul, Penulis, Sinopsis, Kategori, Penerbit, Tahun, Halaman, Bahasa, Cover Image) jika ada
     if (bookId) {
       const bookUpdateData = {};
       if (title) bookUpdateData.title = title;
@@ -191,6 +211,10 @@ const updateInventory = async (req, res, next) => {
       if (description) bookUpdateData.description = description;
       if (categoryId) bookUpdateData.categoryId = parseInt(categoryId);
       if (isbn !== undefined) bookUpdateData.isbn = isbn || null;
+      if (publisher !== undefined) bookUpdateData.publisher = publisher || null;
+      if (publishYear !== undefined) bookUpdateData.publishYear = publishYear ? parseInt(publishYear) : null;
+      if (pages !== undefined) bookUpdateData.pages = pages ? parseInt(pages) : null;
+      if (language !== undefined) bookUpdateData.language = language || null;
       if (coverImage !== undefined) bookUpdateData.coverImage = coverImage;
 
       if (Object.keys(bookUpdateData).length > 0) {

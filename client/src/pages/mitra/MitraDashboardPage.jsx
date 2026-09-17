@@ -76,6 +76,9 @@ export const MitraDashboardPage = () => {
     categoryId: '1',
     publisher: '',
     isbn: '',
+    publishYear: '2024',
+    pages: '200',
+    language: 'Bahasa Indonesia',
     price: '95000',
     stock: '10',
     callNumber: '',
@@ -93,6 +96,11 @@ export const MitraDashboardPage = () => {
     title: '',
     author: '',
     categoryId: '1',
+    publisher: '',
+    isbn: '',
+    publishYear: '2024',
+    pages: '200',
+    language: 'Bahasa Indonesia',
     price: '',
     stock: '',
     callNumber: '',
@@ -262,6 +270,9 @@ export const MitraDashboardPage = () => {
         categoryId: '1',
         publisher: '',
         isbn: '',
+        publishYear: '2024',
+        pages: '200',
+        language: 'Bahasa Indonesia',
         price: '95000',
         stock: '10',
         callNumber: '',
@@ -283,6 +294,11 @@ export const MitraDashboardPage = () => {
       title: item.title || '',
       author: item.author || '',
       categoryId: item.categoryId ? String(item.categoryId) : '1',
+      publisher: item.publisher || '',
+      isbn: item.isbn || '',
+      publishYear: item.publishYear ? String(item.publishYear) : '2024',
+      pages: item.pages ? String(item.pages) : '',
+      language: item.language || 'Bahasa Indonesia',
       price: item.price !== undefined ? String(item.price) : '',
       stock: item.stock !== undefined ? String(item.stock) : '',
       callNumber: item.callNumber || '',
@@ -2040,6 +2056,62 @@ export const MitraDashboardPage = () => {
             </div>
           )}
 
+          {/* Informasi Detail Buku */}
+          <div className="bg-gray-50/80 p-3 rounded-2xl border border-gray-200/80 space-y-2.5">
+            <h4 className="font-semibold text-gray-800 text-xs flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-[#075E54]" />
+              Informasi Detail Buku
+            </h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Penerbit</label>
+                <input
+                  type="text"
+                  name="publisher"
+                  value={inventoryForm.publisher}
+                  onChange={handleFormChange}
+                  placeholder="Contoh: Penerbit Kompas"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Tahun Terbit</label>
+                <input
+                  type="number"
+                  name="publishYear"
+                  value={inventoryForm.publishYear}
+                  onChange={handleFormChange}
+                  placeholder="2024"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Jumlah Halaman</label>
+                <input
+                  type="number"
+                  name="pages"
+                  value={inventoryForm.pages}
+                  onChange={handleFormChange}
+                  placeholder="Contoh: 346"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Bahasa</label>
+                <input
+                  type="text"
+                  name="language"
+                  value={inventoryForm.language}
+                  onChange={handleFormChange}
+                  placeholder="Bahasa Indonesia"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Cover Image Upload */}
           <div>
             <label className="block font-medium text-gray-700 mb-1">
@@ -2241,6 +2313,73 @@ export const MitraDashboardPage = () => {
               </div>
             </div>
           )}
+
+          {/* Informasi Detail Buku (Penerbit, Tahun, ISBN, Halaman, Bahasa) */}
+          <div className="bg-gray-50/80 p-3 rounded-2xl border border-gray-200/80 space-y-2.5">
+            <h4 className="font-semibold text-gray-800 text-xs flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-[#075E54]" />
+              Informasi Detail Buku
+            </h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Penerbit</label>
+                <input
+                  type="text"
+                  name="publisher"
+                  value={editForm.publisher}
+                  onChange={handleEditFormChange}
+                  placeholder="Contoh: Penerbit Kompas"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Tahun Terbit</label>
+                <input
+                  type="number"
+                  name="publishYear"
+                  value={editForm.publishYear}
+                  onChange={handleEditFormChange}
+                  placeholder="2018"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">ISBN</label>
+                <input
+                  type="text"
+                  name="isbn"
+                  value={editForm.isbn}
+                  onChange={handleEditFormChange}
+                  placeholder="978-602-..."
+                  className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Jumlah Halaman</label>
+                <input
+                  type="number"
+                  name="pages"
+                  value={editForm.pages}
+                  onChange={handleEditFormChange}
+                  placeholder="346"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+                />
+              </div>
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Bahasa</label>
+                <input
+                  type="text"
+                  name="language"
+                  value={editForm.language}
+                  onChange={handleEditFormChange}
+                  placeholder="Bahasa Indonesia"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Cover Image Upload (Edit) */}
           <div>
