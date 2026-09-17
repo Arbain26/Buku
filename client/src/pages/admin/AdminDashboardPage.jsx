@@ -30,6 +30,9 @@ import {
   BookMarked,
   Plus,
   MessageCircle,
+  Upload,
+  Image as ImageIcon,
+  X,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -48,7 +51,7 @@ import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { Skeleton } from '../../components/common/Skeleton';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ImageWithFallback } from '../../components/common/ImageWithFallback';
+import { ImageWithFallback, resolveImageUrl } from '../../components/common/ImageWithFallback';
 
 const SIDRAP_DISTRICTS = [
   'Pangkajene',
@@ -170,6 +173,8 @@ export const AdminDashboardPage = () => {
     description: '',
     coverImage: '',
   });
+  const [bookCoverFile, setBookCoverFile] = useState(null);
+  const [bookCoverPreview, setBookCoverPreview] = useState('');
   const [isSubmittingBook, setIsSubmittingBook] = useState(false);
 
   // Delete Book Modal State
@@ -384,9 +389,29 @@ export const AdminDashboardPage = () => {
   };
 
   // Book Handlers
+  const handleBookCoverChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Ukuran file gambar maksimal 5MB.', 'error');
+        return;
+      }
+      setBookCoverFile(file);
+      setBookCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveBookCover = () => {
+    setBookCoverFile(null);
+    setBookCoverPreview('');
+    setBookFormData((prev) => ({ ...prev, coverImage: '' }));
+  };
+
   const handleOpenAddBook = () => {
     setBookModalMode('create');
     setSelectedBook(null);
+    setBookCoverFile(null);
+    setBookCoverPreview('');
     setBookFormData({
       title: '',
       author: '',
@@ -405,6 +430,8 @@ export const AdminDashboardPage = () => {
   const handleOpenEditBook = (b) => {
     setBookModalMode('edit');
     setSelectedBook(b);
+    setBookCoverFile(null);
+    setBookCoverPreview(b.coverImage ? resolveImageUrl(b.coverImage) : '');
     setBookFormData({
       title: b.title || '',
       author: b.author || '',
@@ -429,14 +456,26 @@ export const AdminDashboardPage = () => {
 
     try {
       setIsSubmittingBook(true);
+      const fd = new FormData();
+      Object.keys(bookFormData).forEach((key) => {
+        if (bookFormData[key] !== null && bookFormData[key] !== undefined) {
+          fd.append(key, bookFormData[key]);
+        }
+      });
+      if (bookCoverFile) {
+        fd.append('coverImage', bookCoverFile);
+      }
+
       if (bookModalMode === 'create') {
-        const res = await adminService.createBook(bookFormData);
+        const res = await adminService.createBook(fd);
         showToast(res.message || 'Buku baru berhasil ditambahkan ke katalog!', 'success');
       } else {
-        const res = await adminService.updateBook(selectedBook.id, bookFormData);
+        const res = await adminService.updateBook(selectedBook.id, fd);
         showToast(res.message || 'Katalog buku berhasil diperbarui!', 'success');
       }
       setBookModalOpen(false);
+      setBookCoverFile(null);
+      setBookCoverPreview('');
       await fetchAdminData();
     } catch (err) {
       showToast(err.response?.data?.message || 'Gagal menyimpan data buku.', 'error');
@@ -1965,13 +2004,74 @@ export const AdminDashboardPage = () => {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block font-medium text-gray-700 mb-1">URL Cover / Gambar Buku</label>
+              <label className="block font-medium text-gray-700 mb-1">
+                Sampul Buku (Cover Image)
+              </label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-2xl border border-dashed border-gray-200 bg-gray-50/60 mb-2">
+                {bookCoverPreview ? (
+                  <div className="relative group shrink-0">
+                    <img
+                      src={bookCoverPreview}
+                      alt="Preview Sampul"
+                      className="w-16 h-22 object-cover rounded-xl border border-gray-200 shadow-xs bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveBookCover}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs shadow-sm hover:bg-red-600 transition-colors"
+                      title="Hapus Sampul"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-16 h-22 rounded-xl border border-gray-200 bg-white flex flex-col items-center justify-center text-gray-400 shrink-0">
+                    <ImageIcon className="w-6 h-6 stroke-[1.5]" />
+                    <span className="text-[9px] mt-1">No Cover</span>
+                  </div>
+                )}
+
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor="admin-book-cover-input"
+                      className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-[#075E54] hover:bg-emerald-50 hover:border-emerald-200 font-semibold text-xs shadow-2xs transition-all"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      {bookCoverPreview ? 'Ganti File Sampul' : 'Upload File Sampul'}
+                    </label>
+                    <input
+                      type="file"
+                      id="admin-book-cover-input"
+                      accept="image/*"
+                      onChange={handleBookCoverChange}
+                      className="hidden"
+                    />
+                    {bookCoverPreview && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveBookCover}
+                        className="px-2.5 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                      >
+                        Hapus
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-gray-500">
+                    Upload file gambar sampul dari perangkat (JPG, PNG, atau WebP, maks. 5MB), atau masukkan link URL di bawah ini.
+                  </p>
+                </div>
+              </div>
+
               <input
                 type="text"
                 value={bookFormData.coverImage}
-                onChange={(e) => setBookFormData({ ...bookFormData, coverImage: e.target.value })}
+                onChange={(e) => {
+                  setBookFormData({ ...bookFormData, coverImage: e.target.value });
+                  if (!bookCoverFile) setBookCoverPreview(e.target.value);
+                }}
                 className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
-                placeholder="https://... atau path gambar"
+                placeholder="Atau tempel URL gambar (https://...)"
               />
             </div>
 

@@ -13,7 +13,7 @@ router.get('/statistics', authenticate, requireMitra, mitraController.getMitraSt
 
 // Kompatibilitas frontend Mitra: inventory & borrowing status
 router.post('/inventory', authenticate, requireApprovedMitra, uploadSingle('coverImage'), mitraController.addInventory);
-router.put('/inventory/:id', authenticate, requireApprovedMitra, mitraController.updateInventory);
+router.put('/inventory/:id', authenticate, requireApprovedMitra, uploadSingle('coverImage'), mitraController.updateInventory);
 router.delete('/inventory/:id', authenticate, requireApprovedMitra, mitraController.deleteInventory);
 router.put('/borrowings/:id/status', authenticate, requireApprovedMitra, mitraController.updateBorrowingStatus);
 

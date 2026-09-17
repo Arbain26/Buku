@@ -28,6 +28,9 @@ import {
   Check,
   BarChart3,
   Building2,
+  Upload,
+  Image as ImageIcon,
+  X,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -46,7 +49,7 @@ import { Badge } from '../../components/common/Badge';
 import { Modal } from '../../components/common/Modal';
 import { Skeleton } from '../../components/common/Skeleton';
 import { EmptyState } from '../../components/common/EmptyState';
-import { ImageWithFallback } from '../../components/common/ImageWithFallback';
+import { ImageWithFallback, resolveImageUrl } from '../../components/common/ImageWithFallback';
 
 export const MitraDashboardPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -65,6 +68,8 @@ export const MitraDashboardPage = () => {
   // Add Book/Inventory Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [addCoverFile, setAddCoverFile] = useState(null);
+  const [addCoverPreview, setAddCoverPreview] = useState('');
   const [inventoryForm, setInventoryForm] = useState({
     title: '',
     author: '',
@@ -81,6 +86,8 @@ export const MitraDashboardPage = () => {
 
   // Edit Book/Inventory Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editCoverFile, setEditCoverFile] = useState(null);
+  const [editCoverPreview, setEditCoverPreview] = useState('');
   const [editForm, setEditForm] = useState({
     id: null,
     title: '',
@@ -92,6 +99,7 @@ export const MitraDashboardPage = () => {
     totalStock: '',
     locationShelf: '',
     description: '',
+    coverImage: '',
   });
 
   // Order Status & Delete Modal State (Toko Buku)
@@ -207,6 +215,23 @@ export const MitraDashboardPage = () => {
     setInventoryForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleAddCoverChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Ukuran file gambar maksimal 5MB.', 'error');
+        return;
+      }
+      setAddCoverFile(file);
+      setAddCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveAddCover = () => {
+    setAddCoverFile(null);
+    setAddCoverPreview('');
+  };
+
   const handleAddInventory = async (e) => {
     e.preventDefault();
     if (!inventoryForm.title || !inventoryForm.author) {
@@ -216,9 +241,21 @@ export const MitraDashboardPage = () => {
 
     try {
       setIsSubmitting(true);
-      const res = await mitraService.addInventory(inventoryForm);
+      const fd = new FormData();
+      Object.keys(inventoryForm).forEach((key) => {
+        if (inventoryForm[key] !== null && inventoryForm[key] !== undefined) {
+          fd.append(key, inventoryForm[key]);
+        }
+      });
+      if (addCoverFile) {
+        fd.append('coverImage', addCoverFile);
+      }
+
+      const res = await mitraService.addInventory(fd);
       showToast(res.message || 'Item berhasil ditambahkan ke inventaris!', 'success');
       setIsAddModalOpen(false);
+      setAddCoverFile(null);
+      setAddCoverPreview('');
       setInventoryForm({
         title: '',
         author: '',
@@ -252,12 +289,33 @@ export const MitraDashboardPage = () => {
       totalStock: item.totalStock !== undefined ? String(item.totalStock) : '',
       locationShelf: item.locationShelf || '',
       description: item.description || '',
+      coverImage: item.coverImage || '',
     });
+    setEditCoverFile(null);
+    setEditCoverPreview(item.coverImage ? resolveImageUrl(item.coverImage) : '');
     setIsEditModalOpen(true);
   };
 
   const handleEditFormChange = (e) => {
     setEditForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleEditCoverChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Ukuran file gambar maksimal 5MB.', 'error');
+        return;
+      }
+      setEditCoverFile(file);
+      setEditCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveEditCover = () => {
+    setEditCoverFile(null);
+    setEditCoverPreview('');
+    setEditForm((prev) => ({ ...prev, coverImage: '' }));
   };
 
   const handleUpdateInventory = async (e) => {
@@ -269,9 +327,21 @@ export const MitraDashboardPage = () => {
 
     try {
       setIsSubmitting(true);
-      const res = await mitraService.updateInventory(editForm.id, editForm);
+      const fd = new FormData();
+      Object.keys(editForm).forEach((key) => {
+        if (editForm[key] !== null && editForm[key] !== undefined) {
+          fd.append(key, editForm[key]);
+        }
+      });
+      if (editCoverFile) {
+        fd.append('coverImage', editCoverFile);
+      }
+
+      const res = await mitraService.updateInventory(editForm.id, fd);
       showToast(res.message || 'Keterangan dan data buku berhasil diperbarui!', 'success');
       setIsEditModalOpen(false);
+      setEditCoverFile(null);
+      setEditCoverPreview('');
       fetchDashboard();
     } catch (err) {
       showToast(err.response?.data?.message || 'Gagal memperbarui buku.', 'error');
@@ -1970,6 +2040,68 @@ export const MitraDashboardPage = () => {
             </div>
           )}
 
+          {/* Cover Image Upload */}
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">
+              Sampul Buku (Cover Image)
+            </label>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-2xl border border-dashed border-gray-200 bg-gray-50/60">
+              {addCoverPreview ? (
+                <div className="relative group shrink-0">
+                  <img
+                    src={addCoverPreview}
+                    alt="Preview Sampul"
+                    className="w-16 h-22 object-cover rounded-xl border border-gray-200 shadow-xs bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveAddCover}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs shadow-sm hover:bg-red-600 transition-colors"
+                    title="Hapus Sampul"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-16 h-22 rounded-xl border border-gray-200 bg-white flex flex-col items-center justify-center text-gray-400 shrink-0">
+                  <ImageIcon className="w-6 h-6 stroke-[1.5]" />
+                  <span className="text-[9px] mt-1">No Cover</span>
+                </div>
+              )}
+
+              <div className="flex-1 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="add-cover-input"
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-[#075E54] hover:bg-emerald-50 hover:border-emerald-200 font-semibold text-xs shadow-2xs transition-all"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    {addCoverPreview ? 'Ganti File Sampul' : 'Upload Sampul Buku'}
+                  </label>
+                  <input
+                    type="file"
+                    id="add-cover-input"
+                    accept="image/*"
+                    onChange={handleAddCoverChange}
+                    className="hidden"
+                  />
+                  {addCoverPreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAddCover}
+                      className="px-2.5 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                    >
+                      Batal
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-500">
+                  Pilih file gambar sampul dari perangkat (JPG, PNG, atau WebP, maks. 5MB).
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block font-medium text-gray-700 mb-1">Deskripsi / Sinopsis</label>
             <textarea
@@ -2109,6 +2241,68 @@ export const MitraDashboardPage = () => {
               </div>
             </div>
           )}
+
+          {/* Cover Image Upload (Edit) */}
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">
+              Sampul Buku (Cover Image)
+            </label>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-2xl border border-dashed border-gray-200 bg-gray-50/60">
+              {editCoverPreview ? (
+                <div className="relative group shrink-0">
+                  <img
+                    src={editCoverPreview}
+                    alt="Preview Sampul"
+                    className="w-16 h-22 object-cover rounded-xl border border-gray-200 shadow-xs bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveEditCover}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs shadow-sm hover:bg-red-600 transition-colors"
+                    title="Hapus / Reset Sampul"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-16 h-22 rounded-xl border border-gray-200 bg-white flex flex-col items-center justify-center text-gray-400 shrink-0">
+                  <ImageIcon className="w-6 h-6 stroke-[1.5]" />
+                  <span className="text-[9px] mt-1">No Cover</span>
+                </div>
+              )}
+
+              <div className="flex-1 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="edit-cover-input"
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-[#075E54] hover:bg-emerald-50 hover:border-emerald-200 font-semibold text-xs shadow-2xs transition-all"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    {editCoverPreview ? 'Ganti File Sampul' : 'Upload Sampul Buku'}
+                  </label>
+                  <input
+                    type="file"
+                    id="edit-cover-input"
+                    accept="image/*"
+                    onChange={handleEditCoverChange}
+                    className="hidden"
+                  />
+                  {editCoverPreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveEditCover}
+                      className="px-2.5 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                    >
+                      Hapus Sampul
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-500">
+                  Pilih file gambar baru untuk memperbarui sampul buku ini (JPG, PNG, atau WebP, maks. 5MB).
+                </p>
+              </div>
+            </div>
+          </div>
 
           <div>
             <label className="block font-medium text-gray-700 mb-1">

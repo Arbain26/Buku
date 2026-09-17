@@ -164,14 +164,16 @@ export const mitraService = {
   },
 
   async addInventory(formData) {
-    const res = await api.post('/mitra/inventory', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const isFormData = typeof FormData !== 'undefined' && formData instanceof FormData;
+    const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    const res = await api.post('/mitra/inventory', formData, config);
     return res.data;
   },
 
   async updateInventory(id, data) {
-    const res = await api.put(`/mitra/inventory/${id}`, data);
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    const res = await api.put(`/mitra/inventory/${id}`, data, config);
     return res.data;
   },
 

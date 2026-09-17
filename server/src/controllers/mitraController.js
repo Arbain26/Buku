@@ -61,7 +61,7 @@ const addInventory = async (req, res, next) => {
       itemCategory,
     } = req.body;
 
-    const coverImage = req.file ? `/uploads/${req.file.filename}` : null;
+    const coverImage = req.file ? `/uploads/${req.file.filename}` : (req.body.coverImage || null);
     const slugBase = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const uniqueSlug = `${slugBase}-${Date.now().toString().slice(-4)}`;
 
@@ -83,6 +83,11 @@ const addInventory = async (req, res, next) => {
           coverImage,
           categoryId: parseInt(categoryId) || 1,
         },
+      });
+    } else if (coverImage && (!book.coverImage || book.coverImage !== coverImage)) {
+      await prisma.book.update({
+        where: { id: book.id },
+        data: { coverImage },
       });
     }
 
@@ -124,25 +129,79 @@ const updateInventory = async (req, res, next) => {
     const mitra = req.user.mitraProfile;
     const inventoryId = parseInt(req.params.id);
 
+    const {
+      title,
+      author,
+      categoryId,
+      isbn,
+      description,
+      price,
+      stock,
+      quantity,
+      availableQuantity,
+      callNumber,
+      shelfLocation,
+      locationShelf,
+      category,
+      itemCategory,
+      condition,
+    } = req.body;
+
+    const coverImage = req.file ? `/uploads/${req.file.filename}` : (req.body.coverImage !== undefined ? req.body.coverImage : undefined);
+
+    let bookId = null;
+
     if (mitra.mitraType === 'TOKO_BUKU') {
       const store = await prisma.store.findUnique({ where: { mitraId: mitra.id } });
       const storeProduct = await prisma.storeProduct.findUnique({ where: { id: inventoryId } });
       if (!storeProduct || !store || storeProduct.storeId !== store.id) {
         return errorResponse(res, 'Anda tidak memiliki hak akses atas produk toko ini.', 403);
       }
-      const updated = await storeService.updateStoreProduct(inventoryId, req.body);
-      return successResponse(res, 'Inventaris produk toko berhasil diperbarui.', updated);
+      bookId = storeProduct.bookId;
+
+      await storeService.updateStoreProduct(inventoryId, {
+        price,
+        stock,
+        condition,
+      });
     } else if (mitra.mitraType === 'PERPUSTAKAAN') {
       const library = await prisma.library.findUnique({ where: { mitraId: mitra.id } });
       const collection = await prisma.libraryCollection.findUnique({ where: { id: inventoryId } });
       if (!collection || !library || collection.libraryId !== library.id) {
         return errorResponse(res, 'Anda tidak memiliki hak akses atas koleksi perpustakaan ini.', 403);
       }
-      const updated = await libraryService.updateLibraryCollection(inventoryId, req.body);
-      return successResponse(res, 'Koleksi perpustakaan berhasil diperbarui.', updated);
+      bookId = collection.bookId;
+
+      await libraryService.updateLibraryCollection(inventoryId, {
+        callNumber,
+        quantity: quantity !== undefined ? quantity : req.body.totalStock,
+        availableQuantity,
+        shelfLocation: shelfLocation || locationShelf,
+        category: category || itemCategory,
+      });
+    } else {
+      return errorResponse(res, 'Tipe mitra tidak valid.', 400);
     }
 
-    return errorResponse(res, 'Tipe mitra tidak valid.', 400);
+    // Perbarui data Buku induk (Judul, Penulis, Sinopsis, Kategori, Cover Image) jika ada
+    if (bookId) {
+      const bookUpdateData = {};
+      if (title) bookUpdateData.title = title;
+      if (author) bookUpdateData.author = author;
+      if (description) bookUpdateData.description = description;
+      if (categoryId) bookUpdateData.categoryId = parseInt(categoryId);
+      if (isbn !== undefined) bookUpdateData.isbn = isbn || null;
+      if (coverImage !== undefined) bookUpdateData.coverImage = coverImage;
+
+      if (Object.keys(bookUpdateData).length > 0) {
+        await prisma.book.update({
+          where: { id: bookId },
+          data: bookUpdateData,
+        });
+      }
+    }
+
+    return successResponse(res, 'Data dan keterangan buku berhasil diperbarui.');
   } catch (error) {
     next(error);
   }
