@@ -190,7 +190,6 @@ export const RegisterMitraPage = () => {
                 name="organizationName"
                 value={formData.organizationName}
                 onChange={handleChange}
-                placeholder="Contoh: Toko Buku Sidrap Mandiri"
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               />
@@ -205,7 +204,6 @@ export const RegisterMitraPage = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Contoh: H. Rusli Pratama"
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               />
@@ -223,7 +221,6 @@ export const RegisterMitraPage = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="mitra@domain.com"
                 required
                 className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               />
@@ -239,7 +236,6 @@ export const RegisterMitraPage = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="••••••••"
                   required
                   minLength={6}
                   className="w-full px-3.5 pr-10 py-2.5 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
@@ -266,7 +262,6 @@ export const RegisterMitraPage = () => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                placeholder="081234567890"
                 className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               />
             </div>
@@ -280,7 +275,6 @@ export const RegisterMitraPage = () => {
                 name="phoneWa"
                 value={formData.phoneWa}
                 onChange={handleChange}
-                placeholder="6281234567890 (Gunakan format 62)"
                 className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               />
             </div>
@@ -315,7 +309,6 @@ export const RegisterMitraPage = () => {
                 name="openHours"
                 value={formData.openHours}
                 onChange={handleChange}
-                placeholder="08.00 - 17.00 WITA"
                 className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               />
             </div>
@@ -331,7 +324,6 @@ export const RegisterMitraPage = () => {
               name="address"
               value={formData.address}
               onChange={handleChange}
-              placeholder="Contoh: Jl. Jend. Sudirman No. 45, Depan Alun-Alun Pangkajene"
               required
               className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
             />
@@ -346,7 +338,6 @@ export const RegisterMitraPage = () => {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Jelaskan jenis buku, koleksi, atau kegiatan literasi yang Anda tawarkan kepada masyarakat Sidrap..."
               rows={3}
               className="w-full px-3.5 py-2.5 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
             />

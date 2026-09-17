@@ -132,9 +132,8 @@ export const AdminLoginPage = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@mabbaca.id"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs bg-[#111A16] border border-emerald-900/80 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs bg-[#111A16] border border-emerald-900/80 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -149,9 +148,8 @@ export const AdminLoginPage = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs bg-[#111A16] border border-emerald-900/80 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs bg-[#111A16] border border-emerald-900/80 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -176,9 +174,6 @@ export const AdminLoginPage = () => {
               <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               Isi Otomatis Kredensial Admin Demo
             </button>
-            <p className="text-[11px] text-gray-500 mt-2">
-              Akun: <code className="text-gray-400">admin@mabbaca.id</code> | Sandi: <code className="text-gray-400">admin123</code>
-            </p>
           </div>
         </div>
       </div>
