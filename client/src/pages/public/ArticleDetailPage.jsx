@@ -10,6 +10,7 @@ import {
   BookOpen,
   ArrowLeft,
   User,
+  CheckCircle2,
 } from 'lucide-react';
 import { articleService } from '../../services/dataServices';
 import { ArticleCard } from '../../components/cards/ArticleCard';
@@ -144,6 +145,11 @@ export const ArticleDetailPage = () => {
             <div className="flex items-center gap-1.5 text-[#075E54] font-bold">
               <Clock className="w-3.5 h-3.5" />
               <span>{article.readTimeMinutes || 5} menit membaca</span>
+              {article.content && (
+                <span className="text-gray-400 font-normal ml-1">
+                  (~{article.content.trim().split(/\s+/).filter(Boolean).length} kata)
+                </span>
+              )}
             </div>
           </div>
         </header>
@@ -165,6 +171,24 @@ export const ArticleDetailPage = () => {
             {article.content}
           </div>
         </article>
+
+        {/* Reading Completion Feedback Banner */}
+        {scrollProgress >= 85 && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between gap-3 text-emerald-950 transition-all duration-300">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <p className="font-bold text-xs sm:text-sm">Bacaan 5 Menit Selesai!</p>
+                <p className="text-[11px] text-emerald-700">
+                  Wawasan baru bertambah dan poin aktivitas literasi telah dicatat ke profil Anda.
+                </p>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 font-bold text-xs whitespace-nowrap">
+              +5 XP
+            </span>
+          </div>
+        )}
 
         {/* Author Bio Box */}
         <div className="bg-[#E8F3EF]/40 rounded-2xl p-5 border border-[#cbe1d7] flex items-center gap-4 mt-8">

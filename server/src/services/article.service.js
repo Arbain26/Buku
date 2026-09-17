@@ -152,6 +152,10 @@ class ArticleService {
 
     const thumbnail = file ? `/uploads/${file.filename}` : data.thumbnail || null;
 
+    const words = (data.content || '').trim().split(/\s+/).filter(Boolean).length;
+    const autoReadingTime = Math.max(1, Math.ceil(words / 200));
+    const readingTime = data.readingTime ? parseInt(data.readingTime) : autoReadingTime;
+
     const article = await prisma.article.create({
       data: {
         authorId,
@@ -160,7 +164,7 @@ class ArticleService {
         excerpt: data.excerpt,
         content: data.content,
         thumbnail,
-        readingTime: data.readingTime ? parseInt(data.readingTime) : 5,
+        readingTime,
         status: data.status || 'PUBLISHED',
         publishedAt: data.status === 'PUBLISHED' ? new Date() : null,
       },
@@ -182,7 +186,13 @@ class ArticleService {
     const updateData = {};
     if (data.title) updateData.title = data.title;
     if (data.excerpt) updateData.excerpt = data.excerpt;
-    if (data.content) updateData.content = data.content;
+    if (data.content) {
+      updateData.content = data.content;
+      if (!data.readingTime) {
+        const words = data.content.trim().split(/\s+/).filter(Boolean).length;
+        updateData.readingTime = Math.max(1, Math.ceil(words / 200));
+      }
+    }
     if (data.readingTime) updateData.readingTime = parseInt(data.readingTime);
     if (data.status) {
       updateData.status = data.status;

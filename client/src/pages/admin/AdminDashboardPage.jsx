@@ -3191,15 +3191,33 @@ export const AdminDashboardPage = () => {
             </div>
 
             <div>
-              <label className="block font-medium text-gray-700 mb-1">Isi Lengkap Konten Artikel *</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block font-medium text-gray-700">Isi Lengkap Konten Artikel *</label>
+                <span className="text-[11px] text-amber-700 font-medium">
+                  {articleFormData.content ? articleFormData.content.trim().split(/\s+/).filter(Boolean).length : 0} kata (~
+                  {Math.max(1, Math.ceil((articleFormData.content?.trim().split(/\s+/).filter(Boolean).length || 0) / 200))} menit baca)
+                </span>
+              </div>
               <textarea
                 required
                 rows={7}
                 value={articleFormData.content}
-                onChange={(e) => setArticleFormData({ ...articleFormData, content: e.target.value })}
+                onChange={(e) => {
+                  const newContent = e.target.value;
+                  const words = newContent.trim().split(/\s+/).filter(Boolean).length;
+                  const estTime = Math.max(1, Math.ceil(words / 200));
+                  setArticleFormData({
+                    ...articleFormData,
+                    content: newContent,
+                    readingTime: estTime,
+                  });
+                }}
                 className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-amber-500"
-                placeholder="Tulis naskah artikel literasi secara lengkap di sini..."
+                placeholder="Tulis atau tempel naskah artikel literasi secara lengkap di sini..."
               />
+              <p className="text-[10px] text-gray-400 mt-1">
+                * Standar kalkulasi membaca rata-rata: 200 kata per menit (WPM). Estimasi waktu baca akan otomatis diperbarui.
+              </p>
             </div>
           </div>
 
