@@ -264,18 +264,24 @@ const deleteInventory = async (req, res, next) => {
 // Kompatibilitas endpoint frontend Mitra: updateBorrowingStatus
 const updateBorrowingStatus = async (req, res, next) => {
   try {
-    const { status, reason } = req.body;
+    const { status, reason, notes } = req.body;
     const borrowingId = parseInt(req.params.id);
 
     if (status === 'APPROVED') {
       const result = await borrowingService.approveBorrowing(borrowingId, req.user);
       return successResponse(res, 'Peminjaman berhasil disetujui.', result);
     } else if (status === 'REJECTED') {
-      const result = await borrowingService.rejectBorrowing(borrowingId, req.user, reason);
+      const result = await borrowingService.rejectBorrowing(borrowingId, req.user, reason || notes);
       return successResponse(res, 'Peminjaman berhasil ditolak.', result);
     } else if (status === 'RETURNED') {
       const result = await borrowingService.returnBorrowing(borrowingId, req.user);
-      return successResponse(res, 'Buku berhasil dikembalikan.', result);
+      return successResponse(res, 'Buku berhasil dikembalikan ke perpustakaan.', result);
+    } else if (status === 'BORROWED') {
+      const result = await borrowingService.updateBorrowingStatus(borrowingId, 'BORROWED', notes, req.user);
+      return successResponse(res, 'Buku berhasil ditandai telah diambil oleh pemustaka.', result);
+    } else if (status) {
+      const result = await borrowingService.updateBorrowingStatus(borrowingId, status, notes || reason, req.user);
+      return successResponse(res, `Status peminjaman berhasil diperbarui menjadi ${status}.`, result);
     }
 
     return errorResponse(res, 'Status tidak valid.', 400);
