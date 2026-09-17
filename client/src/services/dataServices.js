@@ -136,6 +136,25 @@ export const articleService = {
     const res = await api.get('/articles/categories');
     return res.data;
   },
+
+  async createArticle(data) {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    const res = await api.post('/articles', data, config);
+    return res.data;
+  },
+
+  async updateArticle(id, data) {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    const res = await api.put(`/articles/${id}`, data, config);
+    return res.data;
+  },
+
+  async deleteArticle(id) {
+    const res = await api.delete(`/articles/${id}`);
+    return res.data;
+  },
 };
 
 export const searchService = {
@@ -463,6 +482,22 @@ export const adminService = {
   async getCategories() {
     const res = await api.get('/categories');
     return res.data;
+  },
+
+  async createArticle(data) {
+    return articleService.createArticle(data);
+  },
+
+  async deleteArticle(id) {
+    return articleService.deleteArticle(id);
+  },
+
+  async createEvent(data) {
+    return eventService.createEvent(data);
+  },
+
+  async deleteEvent(id) {
+    return eventService.deleteEvent(id);
   },
 };
 

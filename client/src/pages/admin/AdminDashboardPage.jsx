@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import {
   Users,
   Building2,
@@ -33,6 +33,7 @@ import {
   Upload,
   Image as ImageIcon,
   X,
+  ExternalLink,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -44,7 +45,7 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
-import { adminService, bookService } from '../../services/dataServices';
+import { adminService, bookService, eventService, articleService } from '../../services/dataServices';
 import { useToast } from '../../contexts/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
@@ -113,6 +114,8 @@ export const AdminDashboardPage = () => {
   const [usersList, setUsersList] = useState([]);
   const [booksList, setBooksList] = useState([]);
   const [eventsList, setEventsList] = useState([]);
+  const [articlesList, setArticlesList] = useState([]);
+  const [articleCategoriesList, setArticleCategoriesList] = useState([]);
   const [ordersList, setOrdersList] = useState([]);
   const [borrowingsList, setBorrowingsList] = useState([]);
   const [categoriesList, setCategoriesList] = useState([]);
@@ -205,10 +208,50 @@ export const AdminDashboardPage = () => {
   const [borrowingToDelete, setBorrowingToDelete] = useState(null);
   const [isSubmittingDeleteBorrowing, setIsSubmittingDeleteBorrowing] = useState(false);
 
+  // Event CRUD State
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [eventFormData, setEventFormData] = useState({
+    title: '',
+    category: 'BEDAH_BUKU',
+    eventDate: '',
+    startTime: '09:00',
+    endTime: '12:00',
+    location: '',
+    district: 'Pangkajene',
+    audience: 'UMUM',
+    capacity: 50,
+    isFree: true,
+    price: 0,
+    description: '',
+    organizerMitraId: '',
+  });
+  const [eventPosterFile, setEventPosterFile] = useState(null);
+  const [eventPosterPreview, setEventPosterPreview] = useState('');
+  const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+  const [deleteEventModalOpen, setDeleteEventModalOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState(null);
+  const [isSubmittingDeleteEvent, setIsSubmittingDeleteEvent] = useState(false);
+
+  // Article CRUD State
+  const [articleModalOpen, setArticleModalOpen] = useState(false);
+  const [articleFormData, setArticleFormData] = useState({
+    title: '',
+    excerpt: '',
+    content: '',
+    readingTime: 5,
+    categoryId: '',
+  });
+  const [articleThumbnailFile, setArticleThumbnailFile] = useState(null);
+  const [articleThumbnailPreview, setArticleThumbnailPreview] = useState('');
+  const [isSubmittingArticle, setIsSubmittingArticle] = useState(false);
+  const [deleteArticleModalOpen, setDeleteArticleModalOpen] = useState(false);
+  const [articleToDelete, setArticleToDelete] = useState(null);
+  const [isSubmittingDeleteArticle, setIsSubmittingDeleteArticle] = useState(false);
+
   const fetchAdminData = async () => {
     try {
       setIsLoading(true);
-      const [dashRes, pendingRes, statsRes, usersRes, booksRes, eventsRes, ordersRes, borrowingsRes, categoriesRes] = await Promise.all([
+      const [dashRes, pendingRes, statsRes, usersRes, booksRes, eventsRes, ordersRes, borrowingsRes, categoriesRes, articlesRes, artCatsRes] = await Promise.all([
         adminService.getDashboard().catch(() => null),
         adminService.getPendingMitra().catch(() => null),
         adminService.getLiteracyStats().catch(() => null),
@@ -218,6 +261,8 @@ export const AdminDashboardPage = () => {
         adminService.getOrders({ limit: 200 }).catch(() => null),
         adminService.getBorrowings({ limit: 200 }).catch(() => null),
         adminService.getCategories().catch(() => null),
+        adminService.getArticles({ limit: 100 }).catch(() => null),
+        articleService.getCategories().catch(() => null),
       ]);
 
       if (dashRes?.data) setDashboardData(dashRes.data);
@@ -227,7 +272,15 @@ export const AdminDashboardPage = () => {
       }
       if (usersRes?.data) setUsersList(usersRes.data);
       if (booksRes?.data) setBooksList(booksRes.data);
-      if (eventsRes?.data) setEventsList(eventsRes.data);
+      if (eventsRes?.data) {
+        setEventsList(Array.isArray(eventsRes.data) ? eventsRes.data : eventsRes.data.events || []);
+      }
+      if (articlesRes?.data) {
+        setArticlesList(Array.isArray(articlesRes.data) ? articlesRes.data : articlesRes.data.articles || []);
+      }
+      if (artCatsRes?.data) {
+        setArticleCategoriesList(Array.isArray(artCatsRes.data) ? artCatsRes.data : []);
+      }
       if (ordersRes?.data) setOrdersList(ordersRes.data);
       if (borrowingsRes?.data) setBorrowingsList(borrowingsRes.data);
       if (categoriesRes?.data) setCategoriesList(categoriesRes.data);
@@ -594,6 +647,138 @@ export const AdminDashboardPage = () => {
     }
   };
 
+  // Event handlers
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
+    if (!eventFormData.title || !eventFormData.eventDate || !eventFormData.location || !eventFormData.description) {
+      showToast('Mohon lengkapi data wajib (Judul, Tanggal, Lokasi, Deskripsi)', 'error');
+      return;
+    }
+    try {
+      setIsSubmittingEvent(true);
+      const fd = new FormData();
+      Object.keys(eventFormData).forEach((key) => {
+        if (eventFormData[key] !== null && eventFormData[key] !== undefined && eventFormData[key] !== '') {
+          fd.append(key, eventFormData[key]);
+        }
+      });
+      if (eventPosterFile) {
+        fd.append('image', eventPosterFile);
+      }
+      const res = await eventService.createEvent(fd);
+      if (res?.data) {
+        showToast('Event literasi berhasil diterbitkan!', 'success');
+        setEventModalOpen(false);
+        setEventFormData({
+          title: '',
+          category: 'BEDAH_BUKU',
+          eventDate: '',
+          startTime: '09:00',
+          endTime: '12:00',
+          location: '',
+          district: 'Pangkajene',
+          audience: 'UMUM',
+          capacity: 50,
+          isFree: true,
+          price: 0,
+          description: '',
+          organizerMitraId: '',
+        });
+        setEventPosterFile(null);
+        setEventPosterPreview('');
+        await fetchAdminData();
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menerbitkan event literasi', 'error');
+    } finally {
+      setIsSubmittingEvent(false);
+    }
+  };
+
+  const handleOpenDeleteEvent = (event) => {
+    setEventToDelete(event);
+    setDeleteEventModalOpen(true);
+  };
+
+  const handleConfirmDeleteEvent = async () => {
+    if (!eventToDelete) return;
+    try {
+      setIsSubmittingDeleteEvent(true);
+      await eventService.deleteEvent(eventToDelete.id);
+      showToast('Event literasi berhasil dihapus', 'success');
+      setDeleteEventModalOpen(false);
+      setEventToDelete(null);
+      await fetchAdminData();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menghapus event', 'error');
+    } finally {
+      setIsSubmittingDeleteEvent(false);
+    }
+  };
+
+  // Article handlers
+  const handleCreateArticle = async (e) => {
+    e.preventDefault();
+    if (!articleFormData.title || !articleFormData.excerpt || !articleFormData.content) {
+      showToast('Mohon lengkapi Judul, Ringkasan, dan Konten artikel', 'error');
+      return;
+    }
+    try {
+      setIsSubmittingArticle(true);
+      const fd = new FormData();
+      fd.append('title', articleFormData.title);
+      fd.append('excerpt', articleFormData.excerpt);
+      fd.append('content', articleFormData.content);
+      fd.append('readingTime', articleFormData.readingTime || 5);
+      if (articleFormData.categoryId) {
+        fd.append('categoryId', articleFormData.categoryId);
+      }
+      if (articleThumbnailFile) {
+        fd.append('thumbnail', articleThumbnailFile);
+      }
+      const res = await articleService.createArticle(fd);
+      if (res?.data) {
+        showToast('Artikel Baca 5 Menit berhasil diterbitkan!', 'success');
+        setArticleModalOpen(false);
+        setArticleFormData({
+          title: '',
+          excerpt: '',
+          content: '',
+          readingTime: 5,
+          categoryId: '',
+        });
+        setArticleThumbnailFile(null);
+        setArticleThumbnailPreview('');
+        await fetchAdminData();
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menerbitkan artikel', 'error');
+    } finally {
+      setIsSubmittingArticle(false);
+    }
+  };
+
+  const handleOpenDeleteArticle = (art) => {
+    setArticleToDelete(art);
+    setDeleteArticleModalOpen(true);
+  };
+
+  const handleConfirmDeleteArticle = async () => {
+    if (!articleToDelete) return;
+    try {
+      setIsSubmittingDeleteArticle(true);
+      await articleService.deleteArticle(articleToDelete.id);
+      showToast('Artikel berhasil dihapus', 'success');
+      setDeleteArticleModalOpen(false);
+      setArticleToDelete(null);
+      await fetchAdminData();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menghapus artikel', 'error');
+    } finally {
+      setIsSubmittingDeleteArticle(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -741,22 +926,42 @@ export const AdminDashboardPage = () => {
           <span className="text-[11px] text-gray-400">Lapak Baca & Gerakan</span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div
+          onClick={() => setSearchParams({ tab: 'events' })}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            currentTab === 'events'
+              ? 'bg-indigo-50/60 border-indigo-500 ring-2 ring-indigo-500/20 shadow-xs'
+              : 'bg-white border-[#E5E7EB] hover:border-indigo-400 hover:shadow-xs'
+          }`}
+          title="Klik untuk mengelola Agenda Event Literasi"
+        >
           <div className="flex items-center justify-between text-gray-500 text-xs mb-1">
-            <span>Event Literasi</span>
+            <span className="font-semibold text-indigo-950">Event Literasi</span>
             <Calendar className="w-4 h-4 text-indigo-600" />
           </div>
-          <p className="text-2xl font-bold text-[#17211D]">{counts?.totalEvents || 0}</p>
-          <span className="text-[11px] text-gray-400">Agenda Terdaftar</span>
+          <p className="text-2xl font-bold text-[#17211D]">{counts?.totalEvents || eventsList.length || 0}</p>
+          <span className="text-[11px] text-indigo-600 font-semibold flex items-center gap-0.5">
+            Agenda Terdaftar <ChevronRight className="w-3 h-3" />
+          </span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div
+          onClick={() => setSearchParams({ tab: 'articles' })}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            currentTab === 'articles'
+              ? 'bg-amber-50/60 border-amber-500 ring-2 ring-amber-500/20 shadow-xs'
+              : 'bg-white border-[#E5E7EB] hover:border-amber-400 hover:shadow-xs'
+          }`}
+          title="Klik untuk mengelola Artikel Baca 5 Menit"
+        >
           <div className="flex items-center justify-between text-gray-500 text-xs mb-1">
-            <span>Baca 5 Menit</span>
+            <span className="font-semibold text-amber-950">Baca 5 Menit</span>
             <FileText className="w-4 h-4 text-amber-600" />
           </div>
-          <p className="text-2xl font-bold text-[#17211D]">{counts?.totalArticles || 0}</p>
-          <span className="text-[11px] text-gray-400">Artikel Edukasi</span>
+          <p className="text-2xl font-bold text-[#17211D]">{counts?.totalArticles || articlesList.length || 0}</p>
+          <span className="text-[11px] text-amber-600 font-semibold flex items-center gap-0.5">
+            Artikel Edukasi <ChevronRight className="w-3 h-3" />
+          </span>
         </div>
       </div>
 
@@ -820,6 +1025,30 @@ export const AdminDashboardPage = () => {
         >
           <BookOpen className="w-4 h-4" />
           Katalog Buku ({booksList.length})
+        </button>
+
+        <button
+          onClick={() => setSearchParams({ tab: 'events' })}
+          className={`px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5 ${
+            currentTab === 'events'
+              ? 'border-indigo-600 text-indigo-700'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Calendar className="w-4 h-4 text-indigo-600" />
+          Agenda Event ({eventsList.length})
+        </button>
+
+        <button
+          onClick={() => setSearchParams({ tab: 'articles' })}
+          className={`px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5 ${
+            currentTab === 'articles'
+              ? 'border-amber-600 text-amber-700'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <FileText className="w-4 h-4 text-amber-600" />
+          Baca 5 Menit ({articlesList.length})
         </button>
 
         <button
@@ -1546,6 +1775,266 @@ export const AdminDashboardPage = () => {
               icon={BookMarked}
               title="Tidak ada sirkulasi peminjaman"
               description="Belum ada peminjaman buku yang sesuai dengan pencarian atau filter status."
+            />
+          )}
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB: AGENDA EVENT LITERASI */}
+      {/* ===================================================================== */}
+      {currentTab === 'events' && (
+        <div className="bg-white p-6 rounded-3xl border border-[#E5E7EB] shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-base text-[#17211D]">Agenda Event Literasi Sidrap</h3>
+              <p className="text-xs text-gray-500">
+                Kelola jadwal bedah buku, diskusi literasi, lapak baca, dan festival literasi di seluruh Sidrap
+              </p>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="Cari judul event / lokasi..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-60 p-2 rounded-xl border border-gray-200 text-xs"
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setEventModalOpen(true)}
+                className="whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Buat Event Literasi
+              </Button>
+            </div>
+          </div>
+
+          {eventsList.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50 text-gray-500 uppercase font-semibold">
+                  <tr>
+                    <th className="p-3">Poster</th>
+                    <th className="p-3">Judul Kegiatan</th>
+                    <th className="p-3">Penyelenggara</th>
+                    <th className="p-3">Jadwal & Waktu</th>
+                    <th className="p-3">Lokasi / Kecamatan</th>
+                    <th className="p-3">Kategori</th>
+                    <th className="p-3">Peserta</th>
+                    <th className="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {eventsList
+                    .filter((ev) =>
+                      searchQuery
+                        ? ev.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          ev.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          ev.organizer?.organizationName?.toLowerCase().includes(searchQuery.toLowerCase())
+                        : true
+                    )
+                    .map((ev) => (
+                      <tr key={ev.id} className="hover:bg-gray-50/60 transition-colors">
+                        <td className="p-3">
+                          <ImageWithFallback
+                            src={ev.image}
+                            alt={ev.title}
+                            className="w-10 h-10 object-cover rounded-lg border border-gray-100"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <p className="font-bold text-[#17211D] line-clamp-1">{ev.title}</p>
+                          <span className="text-gray-400 text-[10px]">Slug: {ev.slug || '-'}</span>
+                        </td>
+                        <td className="p-3">
+                          <span className="font-medium text-[#0F766E]">
+                            {ev.organizer?.organizationName || 'Penyelenggara Literasi'}
+                          </span>
+                        </td>
+                        <td className="p-3 whitespace-nowrap">
+                          <p className="font-medium text-gray-800">
+                            {new Date(ev.eventDate).toLocaleDateString('id-ID', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </p>
+                          <p className="text-gray-400 text-[10px]">
+                            {ev.startTime} - {ev.endTime} WITA
+                          </p>
+                        </td>
+                        <td className="p-3">
+                          <p className="font-medium text-gray-800 line-clamp-1">{ev.location}</p>
+                          {ev.district && (
+                            <span className="inline-block px-1.5 py-0.5 rounded bg-teal-50 text-teal-800 text-[10px]">
+                              {ev.district}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold text-[10px]">
+                            {ev.category?.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td className="p-3 whitespace-nowrap">
+                          <span className="font-bold text-[#17211D]">
+                            {ev._count?.participants ?? ev.registeredCount ?? 0}
+                          </span>
+                          <span className="text-gray-400 text-[10px]"> / {ev.capacity || '∞'} org</span>
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap space-x-1.5">
+                          <Link
+                            to={`/event/${ev.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-2.5 py-1 text-xs border border-gray-200 rounded-lg hover:bg-gray-100 font-medium text-gray-700"
+                            title="Lihat di Web Utama"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 mr-1 text-teal-700" /> Lihat
+                          </Link>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => handleOpenDeleteEvent(ev)}
+                            title="Hapus Event"
+                            className="px-2.5 py-1 text-xs"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <EmptyState
+              icon={Calendar}
+              title="Belum ada agenda event literasi"
+              description="Klik tombol 'Buat Event Literasi' untuk menambahkan jadwal kegiatan baru."
+            />
+          )}
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB: BACA 5 MENIT (ARTIKEL EDUKASI) */}
+      {/* ===================================================================== */}
+      {currentTab === 'articles' && (
+        <div className="bg-white p-6 rounded-3xl border border-[#E5E7EB] shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-base text-[#17211D]">Artikel Edukasi "Baca 5 Menit"</h3>
+              <p className="text-xs text-gray-500">
+                Publikasikan artikel literasi ringkas, tips membaca, kearifan lokal, dan wawasan Sidrap
+              </p>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="Cari artikel / topik..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-60 p-2 rounded-xl border border-gray-200 text-xs"
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setArticleModalOpen(true)}
+                className="whitespace-nowrap bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Tulis Artikel Baru
+              </Button>
+            </div>
+          </div>
+
+          {articlesList.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50 text-gray-500 uppercase font-semibold">
+                  <tr>
+                    <th className="p-3">Cover</th>
+                    <th className="p-3">Judul Artikel & Ringkasan</th>
+                    <th className="p-3">Kategori Topik</th>
+                    <th className="p-3">Estimasi Baca</th>
+                    <th className="p-3">Penulis</th>
+                    <th className="p-3">Tanggal Terbit</th>
+                    <th className="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {articlesList
+                    .filter((art) =>
+                      searchQuery
+                        ? art.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          art.excerpt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          art.category?.toLowerCase().includes(searchQuery.toLowerCase())
+                        : true
+                    )
+                    .map((art) => (
+                      <tr key={art.id} className="hover:bg-gray-50/60 transition-colors">
+                        <td className="p-3">
+                          <ImageWithFallback
+                            src={art.thumbnail}
+                            alt={art.title}
+                            className="w-12 h-9 object-cover rounded-lg border border-gray-100"
+                          />
+                        </td>
+                        <td className="p-3 max-w-xs">
+                          <p className="font-bold text-[#17211D] line-clamp-1">{art.title}</p>
+                          <p className="text-gray-400 text-[11px] line-clamp-1">{art.excerpt}</p>
+                        </td>
+                        <td className="p-3">
+                          <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold text-[10px]">
+                            {art.category || (art.categories && art.categories[0]?.category?.name) || 'Umum'}
+                          </span>
+                        </td>
+                        <td className="p-3 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 font-medium text-gray-700 text-[11px]">
+                            <Clock className="w-3 h-3 text-amber-600" />
+                            {art.readingTime || 5} menit
+                          </span>
+                        </td>
+                        <td className="p-3 whitespace-nowrap text-gray-600">
+                          {art.author?.name || 'Redaksi MABBACA'}
+                        </td>
+                        <td className="p-3 whitespace-nowrap text-gray-500">
+                          {new Date(art.publishedAt || art.createdAt).toLocaleDateString('id-ID')}
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap space-x-1.5">
+                          <Link
+                            to={`/baca-5-menit/${art.slug || art.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-2.5 py-1 text-xs border border-gray-200 rounded-lg hover:bg-gray-100 font-medium text-gray-700"
+                            title="Baca Artikel di Web Utama"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 mr-1 text-amber-600" /> Baca
+                          </Link>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={() => handleOpenDeleteArticle(art)}
+                            title="Hapus Artikel"
+                            className="px-2.5 py-1 text-xs"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <EmptyState
+              icon={FileText}
+              title="Belum ada artikel 'Baca 5 Menit'"
+              description="Klik tombol 'Tulis Artikel Baru' untuk mempublikasikan artikel edukasi ringkas pertama Anda."
             />
           )}
         </div>
@@ -2362,6 +2851,445 @@ export const AdminDashboardPage = () => {
             >
               <Trash2 className="w-3.5 h-3.5 mr-1" />
               Ya, Hapus Peminjaman
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* MODAL BUAT EVENT LITERASI */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={eventModalOpen}
+        onClose={() => setEventModalOpen(false)}
+        title="Buat Agenda Kegiatan / Event Literasi Baru"
+      >
+        <form onSubmit={handleCreateEvent} className="space-y-4 text-xs py-1">
+          <div className="bg-indigo-50 p-3.5 rounded-2xl border border-indigo-200 text-indigo-900 text-xs">
+            <p className="font-bold flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-indigo-700" /> Publikasi Agenda Literasi Kabupaten Sidrap
+            </p>
+            <p className="mt-0.5 text-indigo-700/90 text-[11px]">
+              Event yang Anda buat akan langsung dipublikasikan pada halaman beranda MABBACA dan kalender event seluruh warga.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block font-medium text-gray-700 mb-1">Judul Agenda Kegiatan *</label>
+              <input
+                type="text"
+                required
+                value={eventFormData.title}
+                onChange={(e) => setEventFormData({ ...eventFormData, title: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-indigo-500"
+                placeholder="Contoh: Bedah Buku Sejarah Sidenreng Rappang"
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Kategori Kegiatan *</label>
+              <select
+                value={eventFormData.category}
+                onChange={(e) => setEventFormData({ ...eventFormData, category: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="BEDAH_BUKU">Bedah Buku</option>
+                <option value="DISKUSI">Diskusi Literasi</option>
+                <option value="LAPAK_BACA">Lapak Baca Komunitas</option>
+                <option value="KELAS_MENULIS">Kelas Menulis</option>
+                <option value="PELATIHAN">Pelatihan & Workshop</option>
+                <option value="PAMERAN">Pameran Buku</option>
+                <option value="FESTIVAL_LITERASI">Festival Literasi</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Mitra Penyelenggara</label>
+              <select
+                value={eventFormData.organizerMitraId}
+                onChange={(e) => setEventFormData({ ...eventFormData, organizerMitraId: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="">-- Gunakan Profil Mitra Default / Otomatis --</option>
+                {usersList
+                  .filter((u) => u.mitraProfile && u.mitraProfile.status === 'APPROVED')
+                  .map((u) => (
+                    <option key={u.mitraProfile.id} value={u.mitraProfile.id}>
+                      {u.mitraProfile.organizationName} ({u.mitraProfile.mitraType})
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Tanggal Kegiatan *</label>
+              <input
+                type="date"
+                required
+                value={eventFormData.eventDate}
+                onChange={(e) => setEventFormData({ ...eventFormData, eventDate: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Mulai (WITA) *</label>
+                <input
+                  type="time"
+                  required
+                  value={eventFormData.startTime}
+                  onChange={(e) => setEventFormData({ ...eventFormData, startTime: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Selesai (WITA) *</label>
+                <input
+                  type="time"
+                  required
+                  value={eventFormData.endTime}
+                  onChange={(e) => setEventFormData({ ...eventFormData, endTime: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Lokasi Tempat / Venue *</label>
+              <input
+                type="text"
+                required
+                value={eventFormData.location}
+                onChange={(e) => setEventFormData({ ...eventFormData, location: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-indigo-500"
+                placeholder="Contoh: Taman Usman Isa / Aula Dispusip"
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Kecamatan di Sidrap</label>
+              <select
+                value={eventFormData.district}
+                onChange={(e) => setEventFormData({ ...eventFormData, district: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-indigo-500"
+              >
+                {SIDRAP_DISTRICTS.map((d) => (
+                  <option key={d} value={d}>
+                    Kecamatan {d}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Target Peserta</label>
+              <select
+                value={eventFormData.audience}
+                onChange={(e) => setEventFormData({ ...eventFormData, audience: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="UMUM">Umum (Semua Umur)</option>
+                <option value="ANAK">Anak-anak</option>
+                <option value="REMAJA">Remaja & Pelajar</option>
+                <option value="DEWASA">Dewasa & Mahasiswa</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Kapasitas (Kuota)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={eventFormData.capacity}
+                  onChange={(e) => setEventFormData({ ...eventFormData, capacity: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Biaya</label>
+                <select
+                  value={eventFormData.isFree ? 'free' : 'paid'}
+                  onChange={(e) => setEventFormData({ ...eventFormData, isFree: e.target.value === 'free', price: e.target.value === 'free' ? 0 : eventFormData.price })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-indigo-500"
+                >
+                  <option value="free">Gratis</option>
+                  <option value="paid">Berbayar</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block font-medium text-gray-700 mb-1">Poster Banner Kegiatan</label>
+              <div className="flex items-center gap-3">
+                {eventPosterPreview && (
+                  <img
+                    src={eventPosterPreview}
+                    alt="Preview"
+                    className="w-14 h-14 object-cover rounded-xl border border-gray-200 shrink-0"
+                  />
+                )}
+                <label className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-xl border border-dashed border-gray-300 hover:border-indigo-400 bg-gray-50 cursor-pointer text-gray-600 text-xs transition-colors">
+                  <Upload className="w-4 h-4 text-indigo-600" />
+                  <span>{eventPosterFile ? eventPosterFile.name : 'Upload File Poster (JPG, PNG)'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setEventPosterFile(file);
+                        setEventPosterPreview(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block font-medium text-gray-700 mb-1">Deskripsi & Rundown Kegiatan *</label>
+              <textarea
+                required
+                rows={3}
+                value={eventFormData.description}
+                onChange={(e) => setEventFormData({ ...eventFormData, description: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-indigo-500"
+                placeholder="Rincian acara, pembicara, fasilitas, atau panduan kehadiran..."
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+            <Button type="button" variant="outline" size="sm" onClick={() => setEventModalOpen(false)}>
+              Batal
+            </Button>
+            <Button type="submit" variant="primary" size="sm" isLoading={isSubmittingEvent}>
+              <Plus className="w-3.5 h-3.5 mr-1" />
+              Terbitkan Event
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* MODAL TULIS ARTIKEL BACA 5 MENIT */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={articleModalOpen}
+        onClose={() => setArticleModalOpen(false)}
+        title="Tulis Artikel Edukatif 'Baca 5 Menit' Baru"
+      >
+        <form onSubmit={handleCreateArticle} className="space-y-4 text-xs py-1">
+          <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-amber-900 text-xs">
+            <p className="font-bold flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-amber-700" /> Gerakan Baca Cepat & Literasi Ringkas
+            </p>
+            <p className="mt-0.5 text-amber-800/90 text-[11px]">
+              Artikel Baca 5 Menit dirancang untuk dinikmati warga dalam waktu singkat, memberi wawasan praktis, dan memberi bonus XP membaca pada akun warga.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Judul Artikel Literasi *</label>
+              <input
+                type="text"
+                required
+                value={articleFormData.title}
+                onChange={(e) => setArticleFormData({ ...articleFormData, title: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-amber-500"
+                placeholder="Contoh: 5 Cara Membangun Kebiasaan Membaca Bagi Pekerja Sibuk"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Kategori Topik</label>
+                <select
+                  value={articleFormData.categoryId}
+                  onChange={(e) => setArticleFormData({ ...articleFormData, categoryId: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 bg-white text-xs focus:ring-1 focus:ring-amber-500"
+                >
+                  <option value="">-- Pilih Topik Kategori --</option>
+                  {articleCategoriesList.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                  {articleCategoriesList.length === 0 && (
+                    <>
+                      <option value="1">Tips Membaca</option>
+                      <option value="2">Kearifan Lokal</option>
+                      <option value="3">Teknologi & Literasi</option>
+                      <option value="4">Edukasi Anak</option>
+                      <option value="5">Ketahanan Pangan</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Estimasi Waktu Baca (Menit)</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={articleFormData.readingTime}
+                    onChange={(e) => setArticleFormData({ ...articleFormData, readingTime: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-amber-500"
+                    placeholder="5"
+                  />
+                  <span className="text-gray-400 font-medium shrink-0">Menit</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Thumbnail Foto / Cover Artikel</label>
+              <div className="flex items-center gap-3">
+                {articleThumbnailPreview && (
+                  <img
+                    src={articleThumbnailPreview}
+                    alt="Preview"
+                    className="w-16 h-12 object-cover rounded-xl border border-gray-200 shrink-0"
+                  />
+                )}
+                <label className="flex-1 flex items-center justify-center gap-2 p-2.5 rounded-xl border border-dashed border-gray-300 hover:border-amber-400 bg-gray-50 cursor-pointer text-gray-600 text-xs transition-colors">
+                  <Upload className="w-4 h-4 text-amber-600" />
+                  <span>{articleThumbnailFile ? articleThumbnailFile.name : 'Pilih Foto Cover Artikel (JPG, PNG)'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setArticleThumbnailFile(file);
+                        setArticleThumbnailPreview(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Ringkasan / Excerpt Singkat *</label>
+              <textarea
+                required
+                rows={2}
+                value={articleFormData.excerpt}
+                onChange={(e) => setArticleFormData({ ...articleFormData, excerpt: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-amber-500"
+                placeholder="Ringkasan 1-2 kalimat pemikat pembaca untuk tampil di kartu artikel..."
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Isi Lengkap Konten Artikel *</label>
+              <textarea
+                required
+                rows={7}
+                value={articleFormData.content}
+                onChange={(e) => setArticleFormData({ ...articleFormData, content: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-amber-500"
+                placeholder="Tulis naskah artikel literasi secara lengkap di sini..."
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+            <Button type="button" variant="outline" size="sm" onClick={() => setArticleModalOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              isLoading={isSubmittingArticle}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              <Save className="w-3.5 h-3.5 mr-1" />
+              Terbitkan Artikel
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* MODAL HAPUS EVENT */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={deleteEventModalOpen}
+        onClose={() => setDeleteEventModalOpen(false)}
+        title="Konfirmasi Hapus Event Literasi"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="bg-red-50 p-4 rounded-2xl border border-red-200 text-red-900 space-y-2">
+            <p className="font-bold text-sm">Apakah Anda yakin ingin menghapus agenda kegiatan ini?</p>
+            <p className="text-xs text-red-800">
+              Judul Kegiatan: <strong>{eventToDelete?.title}</strong>
+            </p>
+            <p className="text-[11px] text-red-700">
+              Event ini akan ditarik dari halaman publik, beranda, dan daftar kegiatan masyarakat.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <Button type="button" variant="outline" size="sm" onClick={() => setDeleteEventModalOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              isLoading={isSubmittingDeleteEvent}
+              onClick={handleConfirmDeleteEvent}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Ya, Hapus Event
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* MODAL HAPUS ARTIKEL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={deleteArticleModalOpen}
+        onClose={() => setDeleteArticleModalOpen(false)}
+        title="Konfirmasi Hapus Artikel 'Baca 5 Menit'"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="bg-red-50 p-4 rounded-2xl border border-red-200 text-red-900 space-y-2">
+            <p className="font-bold text-sm">Apakah Anda yakin ingin menghapus artikel literasi ini?</p>
+            <p className="text-xs text-red-800">
+              Judul Artikel: <strong>{articleToDelete?.title}</strong>
+            </p>
+            <p className="text-[11px] text-red-700">
+              Artikel ini akan dihapus dari portal edukasi 'Baca 5 Menit' dan tidak dapat diakses lagi oleh pembaca.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <Button type="button" variant="outline" size="sm" onClick={() => setDeleteArticleModalOpen(false)}>
+              Batal
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              isLoading={isSubmittingDeleteArticle}
+              onClick={handleConfirmDeleteArticle}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Ya, Hapus Artikel
             </Button>
           </div>
         </div>
