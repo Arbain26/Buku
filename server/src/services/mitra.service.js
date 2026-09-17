@@ -132,7 +132,7 @@ class MitraService {
       const store = mitra.store || (await prisma.store.findUnique({ where: { mitraId } }));
       const storeId = store ? store.id : 0;
 
-      const [productsCount, products, orders, events] = await Promise.all([
+      const [productsCount, products, orders, eventsCount, eventsList] = await Promise.all([
         prisma.storeProduct.count({ where: { storeId } }),
         prisma.storeProduct.findMany({
           where: { storeId },
@@ -146,6 +146,11 @@ class MitraService {
           take: 10,
         }),
         prisma.event.count({ where: { organizerMitraId: mitraId } }),
+        prisma.event.findMany({
+          where: { organizerMitraId: mitraId },
+          include: { _count: { select: { participants: true } } },
+          orderBy: { eventDate: 'desc' },
+        }),
       ]);
 
       const totalStock = products.reduce((acc, p) => acc + p.stock, 0);
@@ -181,10 +186,11 @@ class MitraService {
           totalStock,
           totalOrders: orders.length,
           totalRevenue,
-          totalEvents: events,
+          totalEvents: eventsCount,
         },
         topSellingBooks,
         orders,
+        events: eventsList,
         products: products.map((p) => ({
           id: p.id,
           bookId: p.book.id,
@@ -212,7 +218,7 @@ class MitraService {
       const library = mitra.library || (await prisma.library.findUnique({ where: { mitraId } }));
       const libraryId = library ? library.id : 0;
 
-      const [collectionsCount, collections, borrowings, events] = await Promise.all([
+      const [collectionsCount, collections, borrowings, eventsCount, eventsList] = await Promise.all([
         prisma.libraryCollection.count({ where: { libraryId } }),
         prisma.libraryCollection.findMany({
           where: { libraryId },
@@ -228,6 +234,11 @@ class MitraService {
           orderBy: { createdAt: 'desc' },
         }),
         prisma.event.count({ where: { organizerMitraId: mitraId } }),
+        prisma.event.findMany({
+          where: { organizerMitraId: mitraId },
+          include: { _count: { select: { participants: true } } },
+          orderBy: { eventDate: 'desc' },
+        }),
       ]);
 
       const totalBooks = collections.reduce((acc, c) => acc + c.quantity, 0);
@@ -242,7 +253,7 @@ class MitraService {
           totalAvailable,
           totalBorrowings: borrowings.length,
           activeBorrowings,
-          totalEvents: events,
+          totalEvents: eventsCount,
         },
         collections: collections.map((c) => ({
           id: c.id,
@@ -265,6 +276,7 @@ class MitraService {
           isAvailable: c.isAvailable,
         })),
         borrowings,
+        events: eventsList,
       };
     }
 

@@ -130,10 +130,31 @@ export const MitraDashboardPage = () => {
   const [borrowingToDeleteMitra, setBorrowingToDeleteMitra] = useState(null);
   const [isSubmittingDeleteBorrow, setIsSubmittingDeleteBorrow] = useState(false);
 
-  // Delete Event Modal State (Komunitas)
+  // Delete Event Modal State
   const [deleteEventModalOpen, setDeleteEventModalOpen] = useState(false);
   const [eventToDeleteMitra, setEventToDeleteMitra] = useState(null);
   const [isSubmittingDeleteEvent, setIsSubmittingDeleteEvent] = useState(false);
+
+  // Add Event Modal State (Semua Mitra: Toko Buku, Perpustakaan, Komunitas)
+  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
+  const [eventCoverFile, setEventCoverFile] = useState(null);
+  const [eventCoverPreview, setEventCoverPreview] = useState('');
+  const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+  const [eventForm, setEventForm] = useState({
+    title: '',
+    category: 'BEDAH_BUKU',
+    audience: 'UMUM',
+    eventDate: '',
+    startTime: '09:00',
+    endTime: '12:00',
+    location: '',
+    address: '',
+    district: 'Pangkajene',
+    capacity: '50',
+    isFree: true,
+    price: '',
+    description: '',
+  });
 
   const mitraType = user?.mitraProfile?.mitraType || dashboardData?.profile?.mitraType || 'TOKO_BUKU';
   const mitraStatus = dashboardData?.profile?.status || user?.mitraProfile?.status || 'APPROVED';
@@ -476,7 +497,89 @@ export const MitraDashboardPage = () => {
     }
   };
 
-  // Event Handlers (Komunitas)
+  // Event Handlers (Semua Mitra: Toko Buku, Perpustakaan, Komunitas)
+  const handleOpenAddEvent = () => {
+    const today = new Date();
+    today.setDate(today.getDate() + 3);
+    const defaultDate = today.toISOString().split('T')[0];
+
+    setEventForm({
+      title: '',
+      category: mitraType === 'TOKO_BUKU' ? 'BEDAH_BUKU' : mitraType === 'PERPUSTAKAAN' ? 'WORKSHOP' : 'LAPAK_BACA',
+      audience: 'UMUM',
+      eventDate: defaultDate,
+      startTime: '09:00',
+      endTime: '12:00',
+      location: profileForm.organizationName || 'Lokasi Mitra MABBACA',
+      address: profileForm.address || '',
+      district: profileForm.district || 'Pangkajene',
+      capacity: '50',
+      isFree: true,
+      price: '',
+      description: '',
+    });
+    setEventCoverFile(null);
+    setEventCoverPreview('');
+    setIsAddEventModalOpen(true);
+  };
+
+  const handleEventFormChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEventForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+
+  const handleEventCoverChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Ukuran banner kegiatan maksimal 5MB.', 'error');
+        return;
+      }
+      setEventCoverFile(file);
+      setEventCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveEventCover = () => {
+    setEventCoverFile(null);
+    setEventCoverPreview('');
+  };
+
+  const handleCreateEvent = async (e) => {
+    e.preventDefault();
+    if (!eventForm.title.trim() || !eventForm.description.trim() || !eventForm.eventDate || !eventForm.location.trim()) {
+      showToast('Judul, tanggal, lokasi, dan deskripsi kegiatan wajib diisi.', 'error');
+      return;
+    }
+
+    try {
+      setIsSubmittingEvent(true);
+      const fd = new FormData();
+      Object.keys(eventForm).forEach((key) => {
+        if (eventForm[key] !== null && eventForm[key] !== undefined) {
+          fd.append(key, eventForm[key]);
+        }
+      });
+      if (eventCoverFile) {
+        fd.append('image', eventCoverFile);
+      }
+
+      const res = await eventService.createEvent(fd);
+      showToast(res.message || 'Agenda kegiatan literasi berhasil dibuat dan dipublikasikan!', 'success');
+      setIsAddEventModalOpen(false);
+      setEventCoverFile(null);
+      setEventCoverPreview('');
+      await fetchDashboard();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal membuat agenda kegiatan.', 'error');
+    } finally {
+      setIsSubmittingEvent(false);
+    }
+  };
+
   const handleOpenDeleteEvent = (ev) => {
     setEventToDeleteMitra(ev);
     setDeleteEventModalOpen(true);
@@ -743,6 +846,7 @@ export const MitraDashboardPage = () => {
           { id: 'dashboard', label: 'Ringkasan', icon: TrendingUp },
           { id: 'products', label: `Produk Toko (${products?.length || 0})`, icon: Package },
           { id: 'orders', label: `Pesanan Masuk (${orders?.length || 0})`, icon: ShoppingBag },
+          { id: 'events', label: `Agenda Kegiatan (${events?.length || 0})`, icon: Calendar },
           { id: 'profile', label: 'Profil Toko', icon: Building2 },
           { id: 'stats', label: 'Statistik', icon: BarChart3 },
         ];
@@ -751,6 +855,7 @@ export const MitraDashboardPage = () => {
           { id: 'dashboard', label: 'Ringkasan', icon: TrendingUp },
           { id: 'collections', label: `Koleksi Buku (${collections?.length || 0})`, icon: BookOpen },
           { id: 'borrowings', label: `Peminjaman Masuk (${borrowings?.length || 0})`, icon: ShoppingBag },
+          { id: 'events', label: `Agenda Kegiatan (${events?.length || 0})`, icon: Calendar },
           { id: 'profile', label: 'Profil Perpustakaan', icon: Building2 },
           { id: 'stats', label: 'Statistik', icon: BarChart3 },
         ];
@@ -1618,53 +1723,86 @@ export const MitraDashboardPage = () => {
       {/* TAB: EVENTS */}
       {/* ===================================================================== */}
       {currentTab === 'events' && (
-        <div className="bg-white p-6 rounded-3xl border border-[#E5E7EB] shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-white p-6 rounded-3xl border border-[#E5E7EB] shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <h3 className="font-bold text-base text-[#17211D]">Agenda Kegiatan Literasi</h3>
               <p className="text-xs text-gray-500">
-                Event, bedah buku, lapak baca, dan diskusi yang diselenggarakan
+                Event, bedah buku, lapak baca, dan diskusi yang diselenggarakan oleh mitra {roleTitle}
               </p>
             </div>
+            <Button
+              size="sm"
+              onClick={handleOpenAddEvent}
+              className="bg-[#075E54] hover:bg-[#05473F] text-white font-bold text-xs gap-1.5 shadow-xs shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Buat Agenda Kegiatan Baru
+            </Button>
           </div>
 
           {events && events.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {events.map((ev) => (
                 <div
                   key={ev.id}
-                  className="p-4 rounded-2xl border border-gray-100 hover:border-gray-200 transition-all space-y-2 bg-gray-50/50"
+                  className="p-4 rounded-2xl border border-gray-100 hover:border-gray-200 transition-all space-y-3 bg-gray-50/50 flex flex-col justify-between"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
-                      {ev.category || 'DISKUSI'}
-                    </span>
-                    <button
-                      onClick={() => handleOpenDeleteEvent(ev)}
-                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Hapus Agenda Kegiatan"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                  <div className="space-y-2">
+                    {ev.image && (
+                      <div className="h-32 w-full rounded-xl overflow-hidden bg-gray-100 mb-2">
+                        <img
+                          src={resolveImageUrl(ev.image)}
+                          alt={ev.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
+                        {ev.category || 'DISKUSI'}
+                      </span>
+                      <button
+                        onClick={() => handleOpenDeleteEvent(ev)}
+                        className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Hapus Agenda Kegiatan"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <h4 className="font-bold text-sm text-[#17211D] line-clamp-2">{ev.title}</h4>
+                    <p className="text-xs text-gray-500">
+                      📅 {new Date(ev.eventDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                      <br />
+                      ⏰ {ev.startTime} - {ev.endTime} WITA
+                      <br />
+                      📍 {ev.location}
+                    </p>
                   </div>
-                  <h4 className="font-bold text-sm text-[#17211D]">{ev.title}</h4>
-                  <p className="text-xs text-gray-500">
-                    📅 {new Date(ev.eventDate).toLocaleDateString('id-ID')} • 📍 {ev.location}
-                  </p>
                   <div className="pt-2 flex items-center justify-between text-xs text-gray-600 border-t border-gray-100">
-                    <span>Partisipan: {ev._count?.participants || 0} orang</span>
+                    <span>Partisipan: <strong>{ev._count?.participants || 0}</strong> orang</span>
                     <span className="font-semibold text-emerald-800">
-                      {ev.isFree ? 'Gratis' : 'Berbayar'}
+                      {ev.isFree ? 'Gratis' : `Rp ${Number(ev.price || 0).toLocaleString('id-ID')}`}
                     </span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <EmptyState
-              title="Belum ada agenda kegiatan"
-              description="Buat agenda lapak baca atau bedah buku untuk meramaikan gerakan membaca di Sidrap."
-            />
+            <div className="py-8 text-center space-y-4">
+              <EmptyState
+                title="Belum ada agenda kegiatan"
+                description="Buat agenda lapak baca, bedah buku, atau diskusi untuk meramaikan gerakan membaca di Sidrap."
+              />
+              <Button
+                size="sm"
+                onClick={handleOpenAddEvent}
+                className="bg-[#075E54] hover:bg-[#05473F] text-white font-bold text-xs gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Buat Kegiatan Pertama
+              </Button>
+            </div>
           )}
         </div>
       )}
@@ -2710,6 +2848,269 @@ export const MitraDashboardPage = () => {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* MITRA: CREATE EVENT MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={isAddEventModalOpen}
+        onClose={() => setIsAddEventModalOpen(false)}
+        title="Buat Agenda Kegiatan Literasi Baru"
+        maxWidth="max-w-xl"
+      >
+        <form onSubmit={handleCreateEvent} className="space-y-4 text-xs py-1">
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">Judul Kegiatan / Event *</label>
+            <input
+              type="text"
+              name="title"
+              value={eventForm.title}
+              onChange={handleEventFormChange}
+              placeholder="Contoh: Bedah Buku & Diskusi Literasi Bersama Komunitas"
+              required
+              className="w-full p-2.5 rounded-xl border border-gray-200"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Kategori Kegiatan *</label>
+              <select
+                name="category"
+                value={eventForm.category}
+                onChange={handleEventFormChange}
+                className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+              >
+                <option value="BEDAH_BUKU">Bedah Buku</option>
+                <option value="LAPAK_BACA">Lapak Baca & Literasi Desa</option>
+                <option value="DISKUSI">Diskusi & Bincang Literasi</option>
+                <option value="WORKSHOP">Workshop / Pelatihan</option>
+                <option value="FESTIVAL">Festival / Lomba Literasi</option>
+                <option value="WEBINAR">Webinar Online</option>
+              </select>
+            </div>
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Target Audiens *</label>
+              <select
+                name="audience"
+                value={eventForm.audience}
+                onChange={handleEventFormChange}
+                className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+              >
+                <option value="UMUM">Masyarakat Umum</option>
+                <option value="PELAJAR">Pelajar (SD, SMP, SMA)</option>
+                <option value="MAHASISWA">Mahasiswa & Pemuda</option>
+                <option value="ANAK_ANAK">Anak-Anak</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Tanggal Kegiatan *</label>
+              <input
+                type="date"
+                name="eventDate"
+                value={eventForm.eventDate}
+                onChange={handleEventFormChange}
+                required
+                className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+              />
+            </div>
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Jam Mulai *</label>
+              <input
+                type="time"
+                name="startTime"
+                value={eventForm.startTime}
+                onChange={handleEventFormChange}
+                required
+                className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+              />
+            </div>
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Jam Selesai *</label>
+              <input
+                type="time"
+                name="endTime"
+                value={eventForm.endTime}
+                onChange={handleEventFormChange}
+                required
+                className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Nama Tempat / Lokasi *</label>
+              <input
+                type="text"
+                name="location"
+                value={eventForm.location}
+                onChange={handleEventFormChange}
+                placeholder="Contoh: Toko Buku Sobat Baca / Aula Perpus"
+                required
+                className="w-full p-2.5 rounded-xl border border-gray-200"
+              />
+            </div>
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Kecamatan di Sidrap</label>
+              <select
+                name="district"
+                value={eventForm.district}
+                onChange={handleEventFormChange}
+                className="w-full p-2.5 rounded-xl border border-gray-200 bg-white"
+              >
+                {districtsList.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">Alamat Lengkap Tempat</label>
+            <input
+              type="text"
+              name="address"
+              value={eventForm.address}
+              onChange={handleEventFormChange}
+              placeholder="Jl. Jenderal Sudirman No. 45..."
+              className="w-full p-2.5 rounded-xl border border-gray-200"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Kapasitas Peserta (Orang)</label>
+              <input
+                type="number"
+                name="capacity"
+                value={eventForm.capacity}
+                onChange={handleEventFormChange}
+                placeholder="50"
+                min="1"
+                className="w-full p-2.5 rounded-xl border border-gray-200"
+              />
+            </div>
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Biaya Pendaftaran</label>
+              <div className="flex items-center gap-3 pt-2">
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="isFreeRadio"
+                    checked={eventForm.isFree === true || eventForm.isFree === 'true'}
+                    onChange={() => setEventForm((prev) => ({ ...prev, isFree: true, price: '' }))}
+                  />
+                  <span>Gratis</span>
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="isFreeRadio"
+                    checked={eventForm.isFree === false || eventForm.isFree === 'false'}
+                    onChange={() => setEventForm((prev) => ({ ...prev, isFree: false, price: '25000' }))}
+                  />
+                  <span>Berbayar</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {!eventForm.isFree && (
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Harga Tiket / Biaya (Rp)</label>
+              <input
+                type="number"
+                name="price"
+                value={eventForm.price}
+                onChange={handleEventFormChange}
+                placeholder="25000"
+                className="w-full p-2.5 rounded-xl border border-gray-200"
+              />
+            </div>
+          )}
+
+          {/* Banner Upload */}
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">Banner / Poster Kegiatan</label>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-3 rounded-2xl border border-dashed border-gray-200 bg-gray-50/60">
+              {eventCoverPreview ? (
+                <div className="relative group shrink-0">
+                  <img
+                    src={eventCoverPreview}
+                    alt="Preview Banner"
+                    className="w-20 h-14 object-cover rounded-xl border border-gray-200 shadow-xs bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveEventCover}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs shadow-sm hover:bg-red-600 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="w-20 h-14 rounded-xl border border-gray-200 bg-white flex flex-col items-center justify-center text-gray-400 shrink-0">
+                  <ImageIcon className="w-5 h-5 stroke-[1.5]" />
+                  <span className="text-[8px] mt-0.5">Poster</span>
+                </div>
+              )}
+
+              <div className="flex-1 space-y-1">
+                <label
+                  htmlFor="add-event-image"
+                  className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-gray-200 text-[#075E54] hover:bg-emerald-50 hover:border-emerald-200 font-semibold text-xs shadow-2xs transition-all"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  {eventCoverPreview ? 'Ganti Poster' : 'Upload Banner / Poster'}
+                </label>
+                <input
+                  type="file"
+                  id="add-event-image"
+                  accept="image/*"
+                  onChange={handleEventCoverChange}
+                  className="hidden"
+                />
+                <p className="text-[11px] text-gray-500">
+                  Format gambar JPG, PNG, atau WebP (maks. 5MB).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">Deskripsi Lengkap Kegiatan *</label>
+            <textarea
+              name="description"
+              value={eventForm.description}
+              onChange={handleEventFormChange}
+              rows={3}
+              placeholder="Tuliskan tujuan kegiatan, narasumber/pembicara, dan detail acara..."
+              required
+              className="w-full p-2.5 rounded-xl border border-gray-200"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsAddEventModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button type="submit" size="sm" isLoading={isSubmittingEvent}>
+              Publikasikan Kegiatan
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );
