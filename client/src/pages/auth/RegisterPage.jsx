@@ -53,7 +53,7 @@ export const RegisterPage = () => {
       setErrorMessage('');
       const res = await register(formData);
       showToast(res.message || 'Pendaftaran akun berhasil!', 'success');
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       const msg =
         err.response?.data?.message ||

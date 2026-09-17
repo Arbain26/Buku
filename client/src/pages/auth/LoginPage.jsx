@@ -34,11 +34,10 @@ export const LoginPage = () => {
         setErrorMessage('Akses Ditolak: Halaman ini hanya untuk Warga Pembaca dan Mitra Literasi. Akun Administrator dilarang masuk dari halaman ini demi keamanan.');
         showToast('Akses ditolak. Silakan gunakan portal khusus administrator.', 'error');
         return;
-      } else if (res.data?.user?.role === 'MITRA') {
-        navigate('/mitra/dashboard');
-      } else {
-        navigate('/dashboard');
       }
+
+      // Selalu arahkan ke Halaman Website Utama (Beranda) setelah berhasil masuk
+      navigate('/');
     } catch (err) {
       const msg =
         err.response?.data?.message ||

@@ -61,7 +61,7 @@ const MitraRoute = ({ children }) => {
   const { isAuthenticated, isMitra, isLoading } = useAuth();
   if (isLoading) return <PageFallback />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!isMitra) return <Navigate to="/dashboard" replace />;
+  if (!isMitra) return <Navigate to="/" replace />;
   return children;
 };
 
