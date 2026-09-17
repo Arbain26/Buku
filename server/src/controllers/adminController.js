@@ -154,16 +154,56 @@ const getLiteracyStats = async (req, res, next) => {
   }
 };
 
+const updateUser = async (req, res, next) => {
+  try {
+    const updated = await adminService.updateUser(req.params.id, req.body);
+    return successResponse(res, 'Data pengguna berhasil diperbarui.', updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteUser = async (req, res, next) => {
+  try {
+    const result = await adminService.deleteUser(req.params.id, req.user?.id);
+    return successResponse(res, result.message, result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateMitra = async (req, res, next) => {
+  try {
+    const updated = await adminService.updateMitra(req.params.id, req.body);
+    return successResponse(res, 'Data mitra berhasil diperbarui.', updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteMitra = async (req, res, next) => {
+  try {
+    const result = await adminService.deleteMitra(req.params.id);
+    return successResponse(res, result.message, result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAdminDashboard,
   getAdminStatistics,
   getAllUsers,
+  updateUser,
+  deleteUser,
   getMitraList,
   getPendingMitra,
   approveMitra,
   rejectMitra,
   suspendMitra,
   verifyMitra,
+  updateMitra,
+  deleteMitra,
   getEvents,
   getBooks,
   getArticles,

@@ -278,6 +278,252 @@ class AdminService {
       recentEvents,
     };
   }
+
+  // Update User & its associated Mitra profile
+  async updateUser(id, data) {
+    const userId = parseInt(id);
+
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        include: { mitraProfile: true },
+      });
+
+      if (!user) {
+        const error = new Error('Pengguna tidak ditemukan.');
+        error.statusCode = 404;
+        throw error;
+      }
+
+      const updateData = {};
+      if (data.name !== undefined) updateData.name = data.name.trim();
+      if (data.email !== undefined) updateData.email = data.email.trim().toLowerCase();
+      if (data.phone !== undefined) updateData.phone = data.phone ? data.phone.trim() : null;
+      if (data.district !== undefined) updateData.district = data.district;
+      if (data.role !== undefined) updateData.role = data.role;
+      if (data.level !== undefined) updateData.level = data.level;
+      if (data.points !== undefined) updateData.points = parseInt(data.points) || 0;
+      if (data.isActive !== undefined) updateData.isActive = Boolean(data.isActive);
+
+      const updatedUser = await tx.user.update({
+        where: { id: userId },
+        data: updateData,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          avatar: true,
+          district: true,
+          points: true,
+          level: true,
+          isActive: true,
+          createdAt: true,
+        },
+      });
+
+      // Update associated mitraProfile if data is provided
+      if (user.mitraProfile && (data.organizationName || data.mitraType || data.mitraStatus || data.address || data.phoneWa || data.district || data.description !== undefined || data.openHours !== undefined)) {
+        const orgName = data.organizationName || user.mitraProfile.organizationName;
+        const mitraType = data.mitraType || user.mitraProfile.mitraType;
+        const status = data.mitraStatus || user.mitraProfile.status;
+        const address = data.address !== undefined ? data.address : user.mitraProfile.address;
+        const phoneWa = data.phoneWa !== undefined ? data.phoneWa : user.mitraProfile.phoneWa;
+        const district = data.district !== undefined ? data.district : user.mitraProfile.district;
+        const description = data.description !== undefined ? data.description : user.mitraProfile.description;
+        const openHours = data.openHours !== undefined ? data.openHours : user.mitraProfile.openHours;
+
+        const profileUpdate = {};
+        if (orgName) profileUpdate.organizationName = orgName.trim();
+        if (mitraType) profileUpdate.mitraType = mitraType;
+        if (status) profileUpdate.status = status;
+        if (address !== undefined) profileUpdate.address = address;
+        if (phoneWa !== undefined) profileUpdate.phoneWa = phoneWa;
+        if (district !== undefined) profileUpdate.district = district;
+        if (description !== undefined) profileUpdate.description = description;
+        if (openHours !== undefined) profileUpdate.openHours = openHours;
+
+        await tx.mitraProfile.update({
+          where: { id: user.mitraProfile.id },
+          data: profileUpdate,
+        });
+
+        // Sync Store / Library / Community
+        if (orgName || address || phoneWa) {
+          if (mitraType === 'TOKO_BUKU') {
+            await tx.store.updateMany({
+              where: { mitraId: user.mitraProfile.id },
+              data: { name: orgName, address, whatsappNumber: phoneWa },
+            });
+          } else if (mitraType === 'PERPUSTAKAAN') {
+            await tx.library.updateMany({
+              where: { mitraId: user.mitraProfile.id },
+              data: { name: orgName, address },
+            });
+          } else if (mitraType === 'KOMUNITAS') {
+            await tx.community.updateMany({
+              where: { mitraId: user.mitraProfile.id },
+              data: { name: orgName, address, contact: phoneWa },
+            });
+          }
+        }
+      }
+
+      return updatedUser;
+    });
+  }
+
+  // Delete User & its associated Mitra profile safely
+  async deleteUser(id, currentAdminId) {
+    const userId = parseInt(id);
+
+    if (currentAdminId && userId === currentAdminId) {
+      const error = new Error('Anda tidak dapat menghapus akun Anda sendiri.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        include: { mitraProfile: true },
+      });
+
+      if (!user || user.deletedAt) {
+        const error = new Error('Pengguna tidak ditemukan atau sudah dihapus.');
+        error.statusCode = 404;
+        throw error;
+      }
+
+      // Soft delete user
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          deletedAt: new Date(),
+          isActive: false,
+        },
+      });
+
+      // If user has a mitraProfile, soft delete and deactivate services
+      if (user.mitraProfile) {
+        const mitraId = user.mitraProfile.id;
+        await tx.mitraProfile.update({
+          where: { id: mitraId },
+          data: {
+            deletedAt: new Date(),
+            status: 'SUSPENDED',
+          },
+        });
+
+        await tx.store.updateMany({ where: { mitraId }, data: { isActive: false, deletedAt: new Date() } });
+        await tx.library.updateMany({ where: { mitraId }, data: { isActive: false, deletedAt: new Date() } });
+        await tx.community.updateMany({ where: { mitraId }, data: { isActive: false, deletedAt: new Date() } });
+      }
+
+      return { id: userId, message: 'Pengguna dan data mitra berhasil dihapus.' };
+    });
+  }
+
+  // Update Mitra directly by mitraProfile id
+  async updateMitra(id, data) {
+    const mitraId = parseInt(id);
+
+    return prisma.$transaction(async (tx) => {
+      const mitra = await tx.mitraProfile.findUnique({
+        where: { id: mitraId },
+        include: { user: true },
+      });
+
+      if (!mitra) {
+        const error = new Error('Data mitra tidak ditemukan.');
+        error.statusCode = 404;
+        throw error;
+      }
+
+      const updateData = {};
+      if (data.organizationName) updateData.organizationName = data.organizationName.trim();
+      if (data.mitraType) updateData.mitraType = data.mitraType;
+      if (data.status) updateData.status = data.status;
+      if (data.district) updateData.district = data.district;
+      if (data.address !== undefined) updateData.address = data.address;
+      if (data.phoneWa !== undefined) updateData.phoneWa = data.phoneWa;
+      if (data.description !== undefined) updateData.description = data.description;
+      if (data.openHours !== undefined) updateData.openHours = data.openHours;
+
+      const updatedMitra = await tx.mitraProfile.update({
+        where: { id: mitraId },
+        data: updateData,
+        include: { user: true },
+      });
+
+      // Update PIC User if name/phone provided
+      if (data.name || data.phone) {
+        const userUpdate = {};
+        if (data.name) userUpdate.name = data.name.trim();
+        if (data.phone) userUpdate.phone = data.phone.trim();
+        await tx.user.update({
+          where: { id: mitra.userId },
+          data: userUpdate,
+        });
+      }
+
+      // Sync Store/Library/Community
+      const orgName = data.organizationName || mitra.organizationName;
+      const addr = data.address !== undefined ? data.address : mitra.address;
+      const pWa = data.phoneWa !== undefined ? data.phoneWa : mitra.phoneWa;
+
+      if (mitra.mitraType === 'TOKO_BUKU') {
+        await tx.store.updateMany({
+          where: { mitraId },
+          data: { name: orgName, address: addr, whatsappNumber: pWa },
+        });
+      } else if (mitra.mitraType === 'PERPUSTAKAAN') {
+        await tx.library.updateMany({
+          where: { mitraId },
+          data: { name: orgName, address: addr },
+        });
+      } else if (mitra.mitraType === 'KOMUNITAS') {
+        await tx.community.updateMany({
+          where: { mitraId },
+          data: { name: orgName, address: addr, contact: pWa },
+        });
+      }
+
+      return updatedMitra;
+    });
+  }
+
+  // Delete Mitra directly by mitraProfile id
+  async deleteMitra(id) {
+    const mitraId = parseInt(id);
+
+    return prisma.$transaction(async (tx) => {
+      const mitra = await tx.mitraProfile.findUnique({
+        where: { id: mitraId },
+      });
+
+      if (!mitra || mitra.deletedAt) {
+        const error = new Error('Data mitra tidak ditemukan atau sudah dihapus.');
+        error.statusCode = 404;
+        throw error;
+      }
+
+      await tx.mitraProfile.update({
+        where: { id: mitraId },
+        data: {
+          deletedAt: new Date(),
+          status: 'SUSPENDED',
+        },
+      });
+
+      await tx.store.updateMany({ where: { mitraId }, data: { isActive: false, deletedAt: new Date() } });
+      await tx.library.updateMany({ where: { mitraId }, data: { isActive: false, deletedAt: new Date() } });
+      await tx.community.updateMany({ where: { mitraId }, data: { isActive: false, deletedAt: new Date() } });
+
+      return { id: mitraId, message: 'Data mitra berhasil dihapus dan dinonaktifkan.' };
+    });
+  }
 }
 
 module.exports = new AdminService();

@@ -22,6 +22,10 @@ import {
   Clock,
   Eye,
   ChevronRight,
+  Edit,
+  Trash2,
+  Save,
+  Building,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -41,6 +45,33 @@ import { Modal } from '../../components/common/Modal';
 import { Skeleton } from '../../components/common/Skeleton';
 import { EmptyState } from '../../components/common/EmptyState';
 import { ImageWithFallback } from '../../components/common/ImageWithFallback';
+
+const SIDRAP_DISTRICTS = [
+  'Pangkajene',
+  'Maritengngae',
+  'Baranti',
+  'Watang Pulu',
+  'Tellu Limpoe',
+  'Dua Pitue',
+  'Panca Rijang',
+  'Kulo',
+  'Panca Lautang',
+  'Watang Sidenreng',
+  'Pitu Riase',
+];
+
+const MITRA_TYPES = [
+  { value: 'TOKO_BUKU', label: 'Toko Buku' },
+  { value: 'PERPUSTAKAAN', label: 'Perpustakaan Daerah/Desa' },
+  { value: 'KOMUNITAS', label: 'Komunitas / Lapak Baca' },
+];
+
+const MITRA_STATUSES = [
+  { value: 'APPROVED', label: 'Disetujui (Aktif)' },
+  { value: 'PENDING', label: 'Menunggu Verifikasi' },
+  { value: 'REJECTED', label: 'Ditolak' },
+  { value: 'SUSPENDED', label: 'Ditangguhkan' },
+];
 
 export const AdminDashboardPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -66,6 +97,33 @@ export const AdminDashboardPage = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [isSubmittingReject, setIsSubmittingReject] = useState(false);
 
+  // Edit User & Mitra State
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedUserToEdit, setSelectedUserToEdit] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    district: 'Pangkajene',
+    role: 'USER',
+    isActive: true,
+    level: 'Warga Gemar Membaca',
+    points: 0,
+    organizationName: '',
+    mitraType: 'TOKO_BUKU',
+    mitraStatus: 'APPROVED',
+    phoneWa: '',
+    address: '',
+    openHours: '',
+    description: '',
+  });
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+
+  // Delete Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [isSubmittingDelete, setIsSubmittingDelete] = useState(false);
+
   const fetchAdminData = async () => {
     try {
       setIsLoading(true);
@@ -73,7 +131,7 @@ export const AdminDashboardPage = () => {
         adminService.getDashboard().catch(() => null),
         adminService.getPendingMitra().catch(() => null),
         adminService.getLiteracyStats().catch(() => null),
-        adminService.getAllUsers().catch(() => null),
+        adminService.getAllUsers({ limit: 200 }).catch(() => null),
         adminService.getBooks().catch(() => null),
         adminService.getEvents().catch(() => null),
       ]);
@@ -133,6 +191,116 @@ export const AdminDashboardPage = () => {
     }
   };
 
+  const handleOpenEditUser = (u) => {
+    setSelectedUserToEdit(u);
+    setEditFormData({
+      name: u.name || '',
+      email: u.email || '',
+      phone: u.phone || '',
+      district: u.district || 'Pangkajene',
+      role: u.role || 'USER',
+      isActive: u.isActive !== undefined ? u.isActive : true,
+      level: u.level || 'Warga Gemar Membaca',
+      points: u.points !== undefined ? u.points : 0,
+      organizationName: u.mitraProfile?.organizationName || '',
+      mitraType: u.mitraProfile?.mitraType || 'TOKO_BUKU',
+      mitraStatus: u.mitraProfile?.status || 'APPROVED',
+      phoneWa: u.mitraProfile?.phoneWa || u.phone || '',
+      address: u.mitraProfile?.address || '',
+      openHours: u.mitraProfile?.openHours || '',
+      description: u.mitraProfile?.description || '',
+    });
+    setEditModalOpen(true);
+  };
+
+  const handleOpenEditPendingMitra = (m) => {
+    const pseudoUser = {
+      id: m.userId || m.user?.id,
+      name: m.user?.name || '',
+      email: m.user?.email || '',
+      phone: m.user?.phone || m.phoneWa || '',
+      district: m.district || 'Pangkajene',
+      role: 'MITRA',
+      isActive: true,
+      level: m.user?.level || 'Mitra Penggerak',
+      points: m.user?.points || 0,
+      mitraProfile: m,
+    };
+    handleOpenEditUser(pseudoUser);
+  };
+
+  const handleSaveEditUser = async (e) => {
+    e.preventDefault();
+    if (!selectedUserToEdit) return;
+
+    if (!editFormData.name.trim() || !editFormData.email.trim()) {
+      showToast('Nama dan email pengguna wajib diisi.', 'error');
+      return;
+    }
+
+    if ((editFormData.role === 'MITRA' || selectedUserToEdit.mitraProfile) && !editFormData.organizationName.trim()) {
+      showToast('Nama organisasi / usaha mitra wajib diisi.', 'error');
+      return;
+    }
+
+    try {
+      setIsSubmittingEdit(true);
+      const res = await adminService.updateUser(selectedUserToEdit.id, editFormData);
+      showToast(res.message || 'Data pengguna & mitra berhasil diperbarui!', 'success');
+      setEditModalOpen(false);
+      await fetchAdminData();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal memperbarui data pengguna/mitra.', 'error');
+    } finally {
+      setIsSubmittingEdit(false);
+    }
+  };
+
+  const handleOpenDeleteUser = (u) => {
+    setItemToDelete({
+      type: 'USER',
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      mitraOrg: u.mitraProfile?.organizationName,
+    });
+    setDeleteModalOpen(true);
+  };
+
+  const handleOpenDeleteMitra = (m) => {
+    setItemToDelete({
+      type: 'MITRA',
+      id: m.id,
+      name: m.organizationName,
+      email: m.user?.email,
+      role: 'MITRA',
+      mitraOrg: m.organizationName,
+    });
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      setIsSubmittingDelete(true);
+      if (itemToDelete.type === 'USER') {
+        const res = await adminService.deleteUser(itemToDelete.id);
+        showToast(res.message || 'Akun pengguna dan data mitra berhasil dihapus.', 'success');
+      } else {
+        const res = await adminService.deleteMitra(itemToDelete.id);
+        showToast(res.message || 'Data pendaftaran mitra berhasil dihapus.', 'success');
+      }
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
+      await fetchAdminData();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menghapus akun/mitra.', 'error');
+    } finally {
+      setIsSubmittingDelete(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -150,10 +318,13 @@ export const AdminDashboardPage = () => {
 
   // Filtered users
   const filteredUsers = usersList.filter((u) => {
+    const q = searchQuery.toLowerCase();
     const matchSearch =
-      u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.district?.toLowerCase().includes(searchQuery.toLowerCase());
+      u.name?.toLowerCase().includes(q) ||
+      u.email?.toLowerCase().includes(q) ||
+      u.district?.toLowerCase().includes(q) ||
+      u.mitraProfile?.organizationName?.toLowerCase().includes(q) ||
+      u.mitraProfile?.mitraType?.toLowerCase().includes(q);
     const matchRole = userRoleFilter === 'ALL' || u.role === userRoleFilter;
     return matchSearch && matchRole;
   });
@@ -411,20 +582,42 @@ export const AdminDashboardPage = () => {
                       <td className="p-3 text-gray-500">
                         {new Date(mitra.createdAt).toLocaleDateString('id-ID')}
                       </td>
-                      <td className="p-3 text-right space-x-2 whitespace-nowrap">
+                      <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
                         <Button
                           size="sm"
                           variant="primary"
                           onClick={() => handleApproveMitra(mitra.id)}
+                          title="Setujui Kemitraan"
+                          className="px-2.5 py-1 text-xs"
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Setujui
+                          <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Setujui
                         </Button>
                         <Button
                           size="sm"
                           variant="danger"
                           onClick={() => handleOpenRejectModal(mitra)}
+                          title="Tolak Kemitraan"
+                          className="px-2.5 py-1 text-xs"
                         >
-                          <XCircle className="w-3.5 h-3.5" /> Tolak
+                          <XCircle className="w-3.5 h-3.5 mr-1" /> Tolak
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenEditPendingMitra(mitra)}
+                          title="Edit Data Mitra"
+                          className="px-2 py-1 text-xs"
+                        >
+                          <Edit className="w-3.5 h-3.5 text-blue-600" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleOpenDeleteMitra(mitra)}
+                          title="Hapus Pendaftaran Mitra"
+                          className="px-2 py-1 text-xs"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </td>
                     </tr>
@@ -539,42 +732,106 @@ export const AdminDashboardPage = () => {
             <table className="w-full text-left text-xs">
               <thead className="bg-gray-50 text-gray-500 uppercase font-semibold">
                 <tr>
-                  <th className="p-3">Pengguna</th>
+                  <th className="p-3">Pengguna & Lembaga</th>
                   <th className="p-3">Role</th>
-                  <th className="p-3">Wilayah</th>
-                  <th className="p-3">Level Gamifikasi</th>
-                  <th className="p-3">Poin</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3">Wilayah Sidrap</th>
+                  <th className="p-3">Poin & Level</th>
                   <th className="p-3">Bergabung</th>
+                  <th className="p-3 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredUsers.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50/60">
-                    <td className="p-3">
-                      <p className="font-bold text-[#17211D]">{u.name}</p>
-                      <p className="text-gray-400 text-[11px]">{u.email}</p>
-                    </td>
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-0.5 rounded-full font-semibold text-[11px] ${
-                          u.role === 'ADMIN'
-                            ? 'bg-amber-100 text-amber-800'
-                            : u.role === 'MITRA'
-                            ? 'bg-teal-100 text-teal-800'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="p-3 font-medium">Kec. {u.district || 'Pangkajene'}</td>
-                    <td className="p-3 text-emerald-800 font-semibold">{u.level}</td>
-                    <td className="p-3 font-bold text-[#075E54]">{u.points} Pts</td>
-                    <td className="p-3 text-gray-500">
-                      {new Date(u.createdAt).toLocaleDateString('id-ID')}
-                    </td>
-                  </tr>
-                ))}
+                {filteredUsers.map((u) => {
+                  const isMitra = u.role === 'MITRA' || !!u.mitraProfile;
+                  return (
+                    <tr key={u.id} className="hover:bg-gray-50/60 transition-colors">
+                      <td className="p-3">
+                        <div>
+                          <p className="font-bold text-[#17211D]">{u.name}</p>
+                          <p className="text-gray-400 text-[11px]">{u.email}</p>
+                          {u.phone && <p className="text-gray-400 text-[10px]">📞 {u.phone}</p>}
+                          {isMitra && u.mitraProfile && (
+                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                              <span className="inline-flex items-center gap-1 font-semibold text-[10px] px-2 py-0.5 rounded-md bg-teal-50 text-[#0F766E] border border-teal-200">
+                                <Building2 className="w-3 h-3" />
+                                {u.mitraProfile.organizationName}
+                              </span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-medium">
+                                {u.mitraProfile.mitraType}
+                              </span>
+                              <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                                  u.mitraProfile.status === 'APPROVED'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : u.mitraProfile.status === 'PENDING'
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                {u.mitraProfile.status}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={`px-2 py-0.5 rounded-full font-semibold text-[11px] ${
+                            u.role === 'ADMIN'
+                              ? 'bg-amber-100 text-amber-800'
+                              : u.role === 'MITRA'
+                              ? 'bg-teal-100 text-teal-800'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={`px-2 py-0.5 rounded-full font-semibold text-[10px] ${
+                            u.isActive !== false
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-rose-50 text-rose-700 border border-rose-200'
+                          }`}
+                        >
+                          {u.isActive !== false ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </td>
+                      <td className="p-3 font-medium">Kec. {u.district || 'Pangkajene'}</td>
+                      <td className="p-3">
+                        <span className="text-emerald-800 font-semibold block">{u.level}</span>
+                        <span className="font-bold text-[#075E54] text-[11px]">{u.points} Pts</span>
+                      </td>
+                      <td className="p-3 text-gray-500 whitespace-nowrap">
+                        {new Date(u.createdAt).toLocaleDateString('id-ID')}
+                      </td>
+                      <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenEditUser(u)}
+                          title="Edit Pengguna / Mitra"
+                          className="px-2.5 py-1 text-xs"
+                        >
+                          <Edit className="w-3.5 h-3.5 text-blue-600 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleOpenDeleteUser(u)}
+                          title="Hapus Pengguna / Mitra"
+                          className="px-2.5 py-1 text-xs"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          Hapus
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -688,6 +945,302 @@ export const AdminDashboardPage = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* EDIT USER & MITRA MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        title={
+          selectedUserToEdit?.mitraProfile || editFormData.role === 'MITRA'
+            ? 'Edit Data Pengguna & Mitra'
+            : 'Edit Data Pengguna'
+        }
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleSaveEditUser} className="space-y-4 text-xs max-h-[78vh] overflow-y-auto pr-1">
+          {/* Section 1: Profil Akun Pengguna */}
+          <div className="bg-gray-50/80 p-4 rounded-2xl border border-gray-200 space-y-3">
+            <h4 className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-[#075E54]" />
+              Informasi Akun Pengguna
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Nama Lengkap *</label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                  placeholder="Nama lengkap pengguna"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Email Pengguna *</label>
+                <input
+                  type="email"
+                  required
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                  placeholder="user@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Nomor Telepon</label>
+                <input
+                  type="text"
+                  value={editFormData.phone}
+                  onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                  placeholder="08xxxxxxxxxx"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Kecamatan Sidrap</label>
+                <select
+                  value={editFormData.district}
+                  onChange={(e) => setEditFormData({ ...editFormData, district: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                >
+                  {SIDRAP_DISTRICTS.map((d) => (
+                    <option key={d} value={d}>
+                      Kecamatan {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Role Akun</label>
+                <select
+                  value={editFormData.role}
+                  onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                >
+                  <option value="USER">USER (Masyarakat / Pembaca)</option>
+                  <option value="MITRA">MITRA (Pengelola Usaha/Lembaga)</option>
+                  <option value="ADMIN">ADMIN (Administrator)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Status Keaktifan Akun</label>
+                <select
+                  value={editFormData.isActive ? 'true' : 'false'}
+                  onChange={(e) => setEditFormData({ ...editFormData, isActive: e.target.value === 'true' })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                >
+                  <option value="true">Aktif (Dapat Login & Beraktivitas)</option>
+                  <option value="false">Nonaktif / Dibekukan</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Level Gamifikasi</label>
+                <input
+                  type="text"
+                  value={editFormData.level}
+                  onChange={(e) => setEditFormData({ ...editFormData, level: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                  placeholder="Contoh: Warga Gemar Membaca"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Poin Literasi</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editFormData.points}
+                  onChange={(e) => setEditFormData({ ...editFormData, points: parseInt(e.target.value) || 0 })}
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Profil Kemitraan (Shown if role === 'MITRA' or mitraProfile exists) */}
+          {(editFormData.role === 'MITRA' || selectedUserToEdit?.mitraProfile) && (
+            <div className="bg-teal-50/70 p-4 rounded-2xl border border-teal-200 space-y-3">
+              <h4 className="font-bold text-teal-900 text-sm flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-[#0F766E]" />
+                Informasi Profil Mitra Resmi MABBACA
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block font-medium text-teal-900 mb-1">
+                    Nama Usaha / Perpustakaan / Komunitas *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editFormData.organizationName}
+                    onChange={(e) => setEditFormData({ ...editFormData, organizationName: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-teal-200 bg-white text-xs focus:ring-1 focus:ring-[#0F766E]"
+                    placeholder="Contoh: Toko Buku Berkah Sidrap"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-teal-900 mb-1">Jenis Mitra (3 Kategori Resmi)</label>
+                  <select
+                    value={editFormData.mitraType}
+                    onChange={(e) => setEditFormData({ ...editFormData, mitraType: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-teal-200 bg-white text-xs focus:ring-1 focus:ring-[#0F766E]"
+                  >
+                    {MITRA_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-medium text-teal-900 mb-1">Status Kemitraan</label>
+                  <select
+                    value={editFormData.mitraStatus}
+                    onChange={(e) => setEditFormData({ ...editFormData, mitraStatus: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-teal-200 bg-white text-xs focus:ring-1 focus:ring-[#0F766E]"
+                  >
+                    {MITRA_STATUSES.map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-medium text-teal-900 mb-1">Nomor WhatsApp Mitra</label>
+                  <input
+                    type="text"
+                    value={editFormData.phoneWa}
+                    onChange={(e) => setEditFormData({ ...editFormData, phoneWa: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-teal-200 bg-white text-xs focus:ring-1 focus:ring-[#0F766E]"
+                    placeholder="628xxxxxxxxxx"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-medium text-teal-900 mb-1">Jam Operasional</label>
+                  <input
+                    type="text"
+                    value={editFormData.openHours}
+                    onChange={(e) => setEditFormData({ ...editFormData, openHours: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-teal-200 bg-white text-xs focus:ring-1 focus:ring-[#0F766E]"
+                    placeholder="Contoh: 08:00 - 17:00 WITA"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block font-medium text-teal-900 mb-1">Alamat Fisik di Sidrap</label>
+                  <textarea
+                    rows={2}
+                    value={editFormData.address}
+                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-teal-200 bg-white text-xs focus:ring-1 focus:ring-[#0F766E]"
+                    placeholder="Jl. ..., Kel/Desa ..., Kec. ..., Kab. Sidrap"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block font-medium text-teal-900 mb-1">Deskripsi Profil Kemitraan</label>
+                  <textarea
+                    rows={2}
+                    value={editFormData.description}
+                    onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-teal-200 bg-white text-xs focus:ring-1 focus:ring-[#0F766E]"
+                    placeholder="Koleksi buku, fasilitas, atau layanan kemitraan..."
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setEditModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              isLoading={isSubmittingEdit}
+            >
+              <Save className="w-3.5 h-3.5 mr-1" />
+              Simpan Perubahan
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* DELETE CONFIRMATION MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        title="Konfirmasi Hapus Data"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="bg-red-50 p-4 rounded-2xl border border-red-200 text-red-800 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-sm text-red-900">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+              Peringatan Tindakan Penghapusan
+            </div>
+            <p>
+              Apakah Anda yakin ingin menghapus {itemToDelete?.type === 'USER' ? 'akun pengguna' : 'pendaftaran mitra'}{' '}
+              <strong className="underline font-bold">{itemToDelete?.name}</strong>
+              {itemToDelete?.email ? ` (${itemToDelete?.email})` : ''}?
+            </p>
+            {itemToDelete?.mitraOrg && (
+              <p className="text-[11px] bg-red-100/70 p-2 rounded-lg text-red-900 font-medium">
+                ⚠️ Akun ini terhubung dengan mitra: <strong>{itemToDelete.mitraOrg}</strong>.
+                Seluruh data toko/perpustakaan/komunitas yang terafiliasi juga akan dinonaktifkan.
+              </p>
+            )}
+            <p className="text-[11px] text-red-700">
+              Data yang dihapus akan dinonaktifkan dari sistem dan tidak dapat login ke aplikasi MABBACA.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              isLoading={isSubmittingDelete}
+              onClick={handleConfirmDelete}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Ya, Hapus Sekarang
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

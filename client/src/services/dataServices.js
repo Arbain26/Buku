@@ -349,6 +349,26 @@ export const adminService = {
     return res.data;
   },
 
+  async updateUser(id, data) {
+    const res = await api.put(`/admin/users/${id}`, data);
+    return res.data;
+  },
+
+  async deleteUser(id) {
+    const res = await api.delete(`/admin/users/${id}`);
+    return res.data;
+  },
+
+  async updateMitra(id, data) {
+    const res = await api.put(`/admin/mitra/${id}`, data);
+    return res.data;
+  },
+
+  async deleteMitra(id) {
+    const res = await api.delete(`/admin/mitra/${id}`);
+    return res.data;
+  },
+
   async getBooks(params) {
     const res = await api.get('/admin/books', { params });
     return res.data;
