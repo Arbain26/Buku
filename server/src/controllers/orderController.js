@@ -66,10 +66,20 @@ const contactWhatsapp = async (req, res, next) => {
   }
 };
 
+const deleteOrder = async (req, res, next) => {
+  try {
+    const result = await orderService.deleteOrder(req.params.id, req.user);
+    return successResponse(res, result.message, result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createOrder,
   getOrders,
   getOrderById,
   updateOrderStatus,
   contactWhatsapp,
+  deleteOrder,
 };

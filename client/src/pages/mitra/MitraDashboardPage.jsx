@@ -14,6 +14,7 @@ import {
   Clock,
   ShieldCheck,
   AlertCircle,
+  AlertTriangle,
   Trash2,
   Edit,
   Sparkles,
@@ -37,7 +38,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
-import { mitraService, bookService } from '../../services/dataServices';
+import { mitraService, bookService, orderService, borrowingService, eventService } from '../../services/dataServices';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { Button } from '../../components/common/Button';
@@ -92,6 +93,31 @@ export const MitraDashboardPage = () => {
     locationShelf: '',
     description: '',
   });
+
+  // Order Status & Delete Modal State (Toko Buku)
+  const [orderStatusModalOpen, setOrderStatusModalOpen] = useState(false);
+  const [selectedOrderMitra, setSelectedOrderMitra] = useState(null);
+  const [newOrderStatusMitra, setNewOrderStatusMitra] = useState('CONFIRMED');
+  const [isSubmittingOrderStatus, setIsSubmittingOrderStatus] = useState(false);
+
+  const [deleteOrderModalOpen, setDeleteOrderModalOpen] = useState(false);
+  const [orderToDeleteMitra, setOrderToDeleteMitra] = useState(null);
+  const [isSubmittingDeleteOrder, setIsSubmittingDeleteOrder] = useState(false);
+
+  // Reject & Delete Borrowing Modal State (Perpustakaan)
+  const [rejectBorrowModalOpen, setRejectBorrowModalOpen] = useState(false);
+  const [borrowingToReject, setBorrowingToReject] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isSubmittingRejectBorrow, setIsSubmittingRejectBorrow] = useState(false);
+
+  const [deleteBorrowModalOpen, setDeleteBorrowModalOpen] = useState(false);
+  const [borrowingToDeleteMitra, setBorrowingToDeleteMitra] = useState(null);
+  const [isSubmittingDeleteBorrow, setIsSubmittingDeleteBorrow] = useState(false);
+
+  // Delete Event Modal State (Komunitas)
+  const [deleteEventModalOpen, setDeleteEventModalOpen] = useState(false);
+  const [eventToDeleteMitra, setEventToDeleteMitra] = useState(null);
+  const [isSubmittingDeleteEvent, setIsSubmittingDeleteEvent] = useState(false);
 
   const mitraType = user?.mitraProfile?.mitraType || dashboardData?.profile?.mitraType || 'TOKO_BUKU';
   const mitraStatus = dashboardData?.profile?.status || user?.mitraProfile?.status || 'APPROVED';
@@ -272,6 +298,117 @@ export const MitraDashboardPage = () => {
       fetchDashboard();
     } catch (err) {
       showToast(err.response?.data?.message || 'Gagal memperbarui status.', 'error');
+    }
+  };
+
+  // Order Handlers (Toko Buku)
+  const handleOpenUpdateOrderStatus = (ord) => {
+    setSelectedOrderMitra(ord);
+    setNewOrderStatusMitra(ord.status || 'CONFIRMED');
+    setOrderStatusModalOpen(true);
+  };
+
+  const handleSaveOrderStatus = async (e) => {
+    e.preventDefault();
+    if (!selectedOrderMitra) return;
+    try {
+      setIsSubmittingOrderStatus(true);
+      const res = await orderService.updateOrderStatus(selectedOrderMitra.id, newOrderStatusMitra);
+      showToast(res.message || `Status pesanan #${selectedOrderMitra.orderNumber} berhasil diperbarui!`, 'success');
+      setOrderStatusModalOpen(false);
+      fetchDashboard();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal mengubah status pesanan.', 'error');
+    } finally {
+      setIsSubmittingOrderStatus(false);
+    }
+  };
+
+  const handleOpenDeleteOrder = (ord) => {
+    setOrderToDeleteMitra(ord);
+    setDeleteOrderModalOpen(true);
+  };
+
+  const handleConfirmDeleteOrder = async () => {
+    if (!orderToDeleteMitra) return;
+    try {
+      setIsSubmittingDeleteOrder(true);
+      const res = await orderService.deleteOrder(orderToDeleteMitra.id);
+      showToast(res.message || 'Pesanan berhasil dihapus.', 'success');
+      setDeleteOrderModalOpen(false);
+      setOrderToDeleteMitra(null);
+      fetchDashboard();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menghapus pesanan.', 'error');
+    } finally {
+      setIsSubmittingDeleteOrder(false);
+    }
+  };
+
+  // Borrowing Handlers (Perpustakaan)
+  const handleOpenRejectBorrow = (b) => {
+    setBorrowingToReject(b);
+    setRejectReason('');
+    setRejectBorrowModalOpen(true);
+  };
+
+  const handleConfirmRejectBorrow = async (e) => {
+    e.preventDefault();
+    if (!borrowingToReject) return;
+    try {
+      setIsSubmittingRejectBorrow(true);
+      const res = await borrowingService.updateBorrowingStatus(borrowingToReject.id, 'REJECTED', rejectReason);
+      showToast(res.message || 'Permohonan peminjaman berhasil ditolak.', 'success');
+      setRejectBorrowModalOpen(false);
+      setBorrowingToReject(null);
+      fetchDashboard();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menolak permohonan.', 'error');
+    } finally {
+      setIsSubmittingRejectBorrow(false);
+    }
+  };
+
+  const handleOpenDeleteBorrow = (b) => {
+    setBorrowingToDeleteMitra(b);
+    setDeleteBorrowModalOpen(true);
+  };
+
+  const handleConfirmDeleteBorrow = async () => {
+    if (!borrowingToDeleteMitra) return;
+    try {
+      setIsSubmittingDeleteBorrow(true);
+      const res = await borrowingService.deleteBorrowing(borrowingToDeleteMitra.id);
+      showToast(res.message || 'Data riwayat peminjaman berhasil dihapus.', 'success');
+      setDeleteBorrowModalOpen(false);
+      setBorrowingToDeleteMitra(null);
+      fetchDashboard();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menghapus data peminjaman.', 'error');
+    } finally {
+      setIsSubmittingDeleteBorrow(false);
+    }
+  };
+
+  // Event Handlers (Komunitas)
+  const handleOpenDeleteEvent = (ev) => {
+    setEventToDeleteMitra(ev);
+    setDeleteEventModalOpen(true);
+  };
+
+  const handleConfirmDeleteEvent = async () => {
+    if (!eventToDeleteMitra) return;
+    try {
+      setIsSubmittingDeleteEvent(true);
+      const res = await eventService.deleteEvent(eventToDeleteMitra.id);
+      showToast(res.message || 'Agenda kegiatan berhasil dihapus.', 'success');
+      setDeleteEventModalOpen(false);
+      setEventToDeleteMitra(null);
+      fetchDashboard();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menghapus agenda.', 'error');
+    } finally {
+      setIsSubmittingDeleteEvent(false);
     }
   };
 
@@ -510,11 +647,7 @@ export const MitraDashboardPage = () => {
       ? 'Toko Buku'
       : mitraType === 'PERPUSTAKAAN'
       ? 'Perpustakaan'
-      : mitraType === 'KOMUNITAS'
-      ? 'Komunitas Literasi'
-      : mitraType === 'SEKOLAH'
-      ? 'Sekolah'
-      : 'Pengajar';
+      : 'Komunitas Literasi';
 
   // Define tabs based on role
   const getTabs = () => {
@@ -541,20 +674,6 @@ export const MitraDashboardPage = () => {
           { id: 'members', label: `Anggota (${members?.length || 0})`, icon: Users },
           { id: 'events', label: `Agenda Kegiatan (${events?.length || 0})`, icon: Calendar },
           { id: 'profile', label: 'Profil Komunitas', icon: Building2 },
-          { id: 'stats', label: 'Statistik', icon: BarChart3 },
-        ];
-      case 'SEKOLAH':
-        return [
-          { id: 'dashboard', label: 'Ringkasan', icon: TrendingUp },
-          { id: 'events', label: `Kegiatan Literasi (${events?.length || 0})`, icon: BookOpen },
-          { id: 'profile', label: 'Profil Sekolah', icon: Building2 },
-          { id: 'stats', label: 'Statistik', icon: BarChart3 },
-        ];
-      case 'PENGAJAR':
-        return [
-          { id: 'dashboard', label: 'Ringkasan', icon: TrendingUp },
-          { id: 'events', label: `Workshop / Kelas (${events?.length || 0})`, icon: Calendar },
-          { id: 'profile', label: 'Profil Pengajar', icon: GraduationCap },
           { id: 'stats', label: 'Statistik', icon: BarChart3 },
         ];
       default:
@@ -808,62 +927,6 @@ export const MitraDashboardPage = () => {
                   <p className="text-2xl font-bold text-[#17211D]">{metrics?.totalReviews || 0}</p>
                   <span className="text-[11px] font-semibold text-gray-400 mt-1 block">
                     Apresiasi komunitas
-                  </span>
-                </div>
-              </>
-            )}
-
-            {(mitraType === 'SEKOLAH' || mitraType === 'PENGAJAR') && (
-              <>
-                <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-gray-500">Program Literasi</span>
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#075E54] flex items-center justify-center">
-                      <GraduationCap className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-bold text-[#17211D]">{metrics?.totalEvents || 0}</p>
-                  <span className="text-[11px] font-semibold text-emerald-700 mt-1 block">
-                    Kegiatan siswa
-                  </span>
-                </div>
-
-                <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-gray-500">Total Partisipan</span>
-                    <div className="w-8 h-8 rounded-lg bg-teal-50 text-[#0F766E] flex items-center justify-center">
-                      <Users className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-bold text-[#17211D]">{metrics?.totalParticipants || 0}</p>
-                  <span className="text-[11px] font-semibold text-gray-400 mt-1 block">
-                    Pelajar & Pengajar
-                  </span>
-                </div>
-
-                <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-gray-500">Artikel Edukasi</span>
-                    <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                      <BookOpen className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-bold text-[#17211D]">{metrics?.totalArticles || 0}</p>
-                  <span className="text-[11px] font-semibold text-gray-400 mt-1 block">
-                    {metrics?.totalViews || 0} pembaca
-                  </span>
-                </div>
-
-                <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-xs">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-gray-500">Status Kemitraan</span>
-                    <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#075E54] flex items-center justify-center">
-                      <ShieldCheck className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <p className="text-base font-bold text-emerald-800">Aktif</p>
-                  <span className="text-[11px] font-semibold text-gray-400 mt-1 block">
-                    Dinas Pendidikan Sidrap
                   </span>
                 </div>
               </>
@@ -1240,8 +1303,12 @@ export const MitraDashboardPage = () => {
                           className={`px-2 py-0.5 rounded-full font-semibold text-[11px] ${
                             ord.status === 'COMPLETED'
                               ? 'bg-emerald-50 text-emerald-800'
+                              : ord.status === 'CONFIRMED'
+                              ? 'bg-teal-50 text-teal-800'
                               : ord.status === 'CONTACTED'
                               ? 'bg-blue-50 text-blue-800'
+                              : ord.status === 'CANCELLED'
+                              ? 'bg-red-50 text-red-800'
                               : 'bg-amber-50 text-amber-800'
                           }`}
                         >
@@ -1249,16 +1316,33 @@ export const MitraDashboardPage = () => {
                         </span>
                       </td>
                       <td className="p-3 text-right">
-                        <a
-                          href={`https://wa.me/${ord.customerPhone?.replace(/^0/, '62')}?text=${encodeURIComponent(
-                            `Halo Kak ${ord.customerName}, kami dari Toko Buku MABBACA ingin mengonfirmasi pesanan #${ord.orderNumber}.`
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#075E54] font-semibold text-xs transition-colors"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" /> Chat WA
-                        </a>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <a
+                            href={`https://wa.me/${ord.customerPhone?.replace(/^0/, '62')}?text=${encodeURIComponent(
+                              `Halo Kak ${ord.customerName}, kami dari Toko Buku MABBACA ingin mengonfirmasi pesanan #${ord.orderNumber}.`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-[#075E54] font-semibold text-[11px] transition-colors"
+                            title="Hubungi Pelanggan via WhatsApp"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5" /> WA
+                          </a>
+                          <button
+                            onClick={() => handleOpenUpdateOrderStatus(ord)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#0F766E] font-semibold text-[11px] transition-colors"
+                            title="Ubah Status Pesanan"
+                          >
+                            <Edit className="w-3.5 h-3.5" /> Status
+                          </button>
+                          <button
+                            onClick={() => handleOpenDeleteOrder(ord)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Hapus Pesanan"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1322,39 +1406,59 @@ export const MitraDashboardPage = () => {
                               ? 'bg-emerald-50 text-emerald-800'
                               : b.status === 'RETURNED'
                               ? 'bg-gray-100 text-gray-700'
+                              : b.status === 'REJECTED'
+                              ? 'bg-red-50 text-red-800'
                               : 'bg-amber-50 text-amber-800'
                           }`}
                         >
                           {b.status}
                         </span>
                       </td>
-                      <td className="p-3 text-right space-x-2">
-                        {b.status === 'PENDING' && (
-                          <Button
-                            size="sm"
-                            variant="primary"
-                            onClick={() => handleUpdateBorrowStatus(b.id, 'APPROVED')}
+                      <td className="p-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {b.status === 'PENDING' && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="primary"
+                                onClick={() => handleUpdateBorrowStatus(b.id, 'APPROVED')}
+                              >
+                                Setujui
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="danger"
+                                onClick={() => handleOpenRejectBorrow(b)}
+                              >
+                                Tolak
+                              </Button>
+                            </>
+                          )}
+                          {b.status === 'APPROVED' && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdateBorrowStatus(b.id, 'BORROWED')}
+                            >
+                              Diambil
+                            </Button>
+                          )}
+                          {b.status === 'BORROWED' && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdateBorrowStatus(b.id, 'RETURNED')}
+                            >
+                              Kembali
+                            </Button>
+                          )}
+                          <button
+                            onClick={() => handleOpenDeleteBorrow(b)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors inline-flex items-center"
+                            title="Hapus Riwayat Peminjaman"
                           >
-                            Setujui
-                          </Button>
-                        )}
-                        {b.status === 'APPROVED' && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleUpdateBorrowStatus(b.id, 'BORROWED')}
-                          >
-                            Diambil
-                          </Button>
-                        )}
-                        {b.status === 'BORROWED' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleUpdateBorrowStatus(b.id, 'RETURNED')}
-                          >
-                            Kembali
-                          </Button>
-                        )}
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1445,9 +1549,18 @@ export const MitraDashboardPage = () => {
                   key={ev.id}
                   className="p-4 rounded-2xl border border-gray-100 hover:border-gray-200 transition-all space-y-2 bg-gray-50/50"
                 >
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
-                    {ev.category || 'DISKUSI'}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
+                      {ev.category || 'DISKUSI'}
+                    </span>
+                    <button
+                      onClick={() => handleOpenDeleteEvent(ev)}
+                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Hapus Agenda Kegiatan"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                   <h4 className="font-bold text-sm text-[#17211D]">{ev.title}</h4>
                   <p className="text-xs text-gray-500">
                     📅 {new Date(ev.eventDate).toLocaleDateString('id-ID')} • 📍 {ev.location}
@@ -2026,6 +2139,244 @@ export const MitraDashboardPage = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* MITRA: ORDER STATUS MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={orderStatusModalOpen}
+        onClose={() => setOrderStatusModalOpen(false)}
+        title={`Perbarui Status Pesanan #${selectedOrderMitra?.orderNumber || ''}`}
+      >
+        <form onSubmit={handleSaveOrderStatus} className="space-y-4 text-xs">
+          <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-emerald-950 space-y-1">
+            <p><strong>Pelanggan:</strong> {selectedOrderMitra?.customerName}</p>
+            <p><strong>Kontak:</strong> +{selectedOrderMitra?.customerPhone}</p>
+            <p><strong>Total Pesanan:</strong> Rp {Number(selectedOrderMitra?.totalAmount || 0).toLocaleString('id-ID')}</p>
+          </div>
+
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">Status Transaksi</label>
+            <select
+              value={newOrderStatusMitra}
+              onChange={(e) => setNewOrderStatusMitra(e.target.value)}
+              className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-semibold focus:ring-1 focus:ring-[#075E54]"
+            >
+              <option value="PENDING">Menunggu Konfirmasi (PENDING)</option>
+              <option value="CONTACTED">Telah Dihubungi via WA (CONTACTED)</option>
+              <option value="CONFIRMED">Dikonfirmasi & Diproses (CONFIRMED)</option>
+              <option value="COMPLETED">Selesai / Buku Diambil (COMPLETED)</option>
+              <option value="CANCELLED">Dibatalkan (CANCELLED)</option>
+            </select>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setOrderStatusModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              isLoading={isSubmittingOrderStatus}
+            >
+              Simpan Perubahan
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* MITRA: DELETE ORDER MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={deleteOrderModalOpen}
+        onClose={() => setDeleteOrderModalOpen(false)}
+        title="Hapus Data Pesanan"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="bg-red-50 p-4 rounded-2xl border border-red-200 text-red-800 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-sm text-red-900">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+              Konfirmasi Hapus Pesanan
+            </div>
+            <p>
+              Apakah Anda yakin ingin menghapus data pesanan <strong>#{orderToDeleteMitra?.orderNumber}</strong> dari pelanggan <strong>{orderToDeleteMitra?.customerName}</strong>?
+            </p>
+            <p className="text-[11px] text-red-700">
+              Data transaksi pesanan ini akan dihapus permanen dari sistem toko Anda.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteOrderModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              isLoading={isSubmittingDeleteOrder}
+              onClick={handleConfirmDeleteOrder}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Ya, Hapus Pesanan
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* MITRA: REJECT BORROWING MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={rejectBorrowModalOpen}
+        onClose={() => setRejectBorrowModalOpen(false)}
+        title="Tolak Permohonan Peminjaman Buku"
+      >
+        <form onSubmit={handleConfirmRejectBorrow} className="space-y-4 text-xs">
+          <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 text-amber-950 space-y-1">
+            <p><strong>Pemustaka:</strong> {borrowingToReject?.user?.name || borrowingToReject?.borrowerName}</p>
+            <p><strong>Judul Buku:</strong> {borrowingToReject?.book?.title || borrowingToReject?.bookTitle}</p>
+          </div>
+
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">Alasan Penolakan (Opsional)</label>
+            <textarea
+              rows={3}
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Contoh: Buku sedang dalam perbaikan fisik, pemustaka memiliki tanggungan pinjaman lain, dll..."
+              className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-red-500"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setRejectBorrowModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="danger"
+              size="sm"
+              isLoading={isSubmittingRejectBorrow}
+            >
+              Konfirmasi Tolak
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* MITRA: DELETE BORROWING MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={deleteBorrowModalOpen}
+        onClose={() => setDeleteBorrowModalOpen(false)}
+        title="Hapus Data Riwayat Peminjaman"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="bg-red-50 p-4 rounded-2xl border border-red-200 text-red-800 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-sm text-red-900">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+              Konfirmasi Hapus Riwayat
+            </div>
+            <p>
+              Apakah Anda yakin ingin menghapus data sirkulasi peminjaman buku:
+              <br />
+              <strong className="text-red-950 font-bold">"{borrowingToDeleteMitra?.book?.title || borrowingToDeleteMitra?.bookTitle}"</strong>
+              <br />
+              Pemustaka: <strong>{borrowingToDeleteMitra?.user?.name || borrowingToDeleteMitra?.borrowerName}</strong>
+            </p>
+            <p className="text-[11px] text-red-700">
+              Catatan: Menghapus data ini tidak mempengaruhi stok koleksi yang tercatat.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteBorrowModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              isLoading={isSubmittingDeleteBorrow}
+              onClick={handleConfirmDeleteBorrow}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Ya, Hapus Data
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* MITRA: DELETE EVENT MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={deleteEventModalOpen}
+        onClose={() => setDeleteEventModalOpen(false)}
+        title="Hapus Agenda Kegiatan"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="bg-red-50 p-4 rounded-2xl border border-red-200 text-red-800 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-sm text-red-900">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+              Konfirmasi Hapus Agenda Kegiatan
+            </div>
+            <p>
+              Apakah Anda yakin ingin menghapus kegiatan literasi:
+              <br />
+              <strong className="text-base text-red-950 font-bold block mt-1">"{eventToDeleteMitra?.title}"</strong>
+            </p>
+            <p className="text-[11px] text-red-700">
+              Agenda ini akan dihapus dari kalender kegiatan publik MABBACA.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteEventModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              isLoading={isSubmittingDeleteEvent}
+              onClick={handleConfirmDeleteEvent}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Ya, Hapus Kegiatan
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

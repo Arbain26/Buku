@@ -26,6 +26,10 @@ import {
   Trash2,
   Save,
   Building,
+  ShoppingBag,
+  BookMarked,
+  Plus,
+  MessageCircle,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -37,7 +41,7 @@ import {
   Tooltip,
   Legend,
 } from 'recharts';
-import { adminService } from '../../services/dataServices';
+import { adminService, bookService } from '../../services/dataServices';
 import { useToast } from '../../contexts/ToastContext';
 import { Button } from '../../components/common/Button';
 import { Badge } from '../../components/common/Badge';
@@ -73,9 +77,28 @@ const MITRA_STATUSES = [
   { value: 'SUSPENDED', label: 'Ditangguhkan' },
 ];
 
+const ORDER_STATUS_OPTIONS = [
+  { value: 'ALL', label: 'Semua Status Pesanan' },
+  { value: 'PENDING', label: 'Menunggu Konfirmasi (Pending)' },
+  { value: 'CONTACTED', label: 'Dihubungi via WA' },
+  { value: 'CONFIRMED', label: 'Pesanan Dikonfirmasi' },
+  { value: 'COMPLETED', label: 'Pesanan Selesai' },
+  { value: 'CANCELLED', label: 'Dibatalkan' },
+];
+
+const BORROW_STATUS_OPTIONS = [
+  { value: 'ALL', label: 'Semua Status Peminjaman' },
+  { value: 'PENDING', label: 'Menunggu Persetujuan' },
+  { value: 'APPROVED', label: 'Disetujui Siap Diambil' },
+  { value: 'BORROWED', label: 'Sedang Dipinjam' },
+  { value: 'RETURNED', label: 'Telah Dikembalikan' },
+  { value: 'REJECTED', label: 'Permohonan Ditolak' },
+  { value: 'OVERDUE', label: 'Terlambat / Jatuh Tempo' },
+];
+
 export const AdminDashboardPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentTab = searchParams.get('tab') || 'overview'; // overview, verifikasi, literasi-stats, users, books, events
+  const currentTab = searchParams.get('tab') || 'overview'; // overview, verifikasi, literasi-stats, users, books, orders, borrowings
 
   const { showToast } = useToast();
 
@@ -85,11 +108,16 @@ export const AdminDashboardPage = () => {
   const [usersList, setUsersList] = useState([]);
   const [booksList, setBooksList] = useState([]);
   const [eventsList, setEventsList] = useState([]);
+  const [ordersList, setOrdersList] = useState([]);
+  const [borrowingsList, setBorrowingsList] = useState([]);
+  const [categoriesList, setCategoriesList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('ALL');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('ALL');
+  const [borrowStatusFilter, setBorrowStatusFilter] = useState('ALL');
 
   // Reject Modal State
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -119,21 +147,70 @@ export const AdminDashboardPage = () => {
   });
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
-  // Delete Modal State
+  // Delete User/Mitra Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isSubmittingDelete, setIsSubmittingDelete] = useState(false);
 
+  // Book CRUD Modal State
+  const [bookModalOpen, setBookModalOpen] = useState(false);
+  const [bookModalMode, setBookModalMode] = useState('create'); // 'create' | 'edit'
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [bookFormData, setBookFormData] = useState({
+    title: '',
+    author: '',
+    publisher: '',
+    isbn: '',
+    publishYear: '2024',
+    pages: '200',
+    language: 'Bahasa Indonesia',
+    categoryId: '1',
+    description: '',
+    coverImage: '',
+  });
+  const [isSubmittingBook, setIsSubmittingBook] = useState(false);
+
+  // Delete Book Modal State
+  const [deleteBookModalOpen, setDeleteBookModalOpen] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState(null);
+  const [isSubmittingDeleteBook, setIsSubmittingDeleteBook] = useState(false);
+
+  // Order Status Modal State
+  const [orderStatusModalOpen, setOrderStatusModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [newOrderStatus, setNewOrderStatus] = useState('CONFIRMED');
+  const [isSubmittingOrderStatus, setIsSubmittingOrderStatus] = useState(false);
+
+  // Delete Order Modal State
+  const [deleteOrderModalOpen, setDeleteOrderModalOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState(null);
+  const [isSubmittingDeleteOrder, setIsSubmittingDeleteOrder] = useState(false);
+
+  // Borrowing Status Modal State
+  const [borrowingStatusModalOpen, setBorrowingStatusModalOpen] = useState(false);
+  const [selectedBorrowing, setSelectedBorrowing] = useState(null);
+  const [newBorrowingStatus, setNewBorrowingStatus] = useState('APPROVED');
+  const [borrowingNotes, setBorrowingNotes] = useState('');
+  const [isSubmittingBorrowingStatus, setIsSubmittingBorrowingStatus] = useState(false);
+
+  // Delete Borrowing Modal State
+  const [deleteBorrowingModalOpen, setDeleteBorrowingModalOpen] = useState(false);
+  const [borrowingToDelete, setBorrowingToDelete] = useState(null);
+  const [isSubmittingDeleteBorrowing, setIsSubmittingDeleteBorrowing] = useState(false);
+
   const fetchAdminData = async () => {
     try {
       setIsLoading(true);
-      const [dashRes, pendingRes, statsRes, usersRes, booksRes, eventsRes] = await Promise.all([
+      const [dashRes, pendingRes, statsRes, usersRes, booksRes, eventsRes, ordersRes, borrowingsRes, categoriesRes] = await Promise.all([
         adminService.getDashboard().catch(() => null),
         adminService.getPendingMitra().catch(() => null),
         adminService.getLiteracyStats().catch(() => null),
         adminService.getAllUsers({ limit: 200 }).catch(() => null),
-        adminService.getBooks().catch(() => null),
+        adminService.getBooks({ limit: 200 }).catch(() => null),
         adminService.getEvents().catch(() => null),
+        adminService.getOrders({ limit: 200 }).catch(() => null),
+        adminService.getBorrowings({ limit: 200 }).catch(() => null),
+        adminService.getCategories().catch(() => null),
       ]);
 
       if (dashRes?.data) setDashboardData(dashRes.data);
@@ -144,6 +221,9 @@ export const AdminDashboardPage = () => {
       if (usersRes?.data) setUsersList(usersRes.data);
       if (booksRes?.data) setBooksList(booksRes.data);
       if (eventsRes?.data) setEventsList(eventsRes.data);
+      if (ordersRes?.data) setOrdersList(ordersRes.data);
+      if (borrowingsRes?.data) setBorrowingsList(borrowingsRes.data);
+      if (categoriesRes?.data) setCategoriesList(categoriesRes.data);
     } catch (err) {
       console.error('Failed to load admin dashboard:', err);
     } finally {
@@ -301,6 +381,178 @@ export const AdminDashboardPage = () => {
     }
   };
 
+  // Book Handlers
+  const handleOpenAddBook = () => {
+    setBookModalMode('create');
+    setSelectedBook(null);
+    setBookFormData({
+      title: '',
+      author: '',
+      publisher: '',
+      isbn: '',
+      publishYear: '2024',
+      pages: '200',
+      language: 'Bahasa Indonesia',
+      categoryId: categoriesList[0]?.id ? String(categoriesList[0].id) : '1',
+      description: '',
+      coverImage: '',
+    });
+    setBookModalOpen(true);
+  };
+
+  const handleOpenEditBook = (b) => {
+    setBookModalMode('edit');
+    setSelectedBook(b);
+    setBookFormData({
+      title: b.title || '',
+      author: b.author || '',
+      publisher: b.publisher || '',
+      isbn: b.isbn || '',
+      publishYear: b.publishYear ? String(b.publishYear) : '2024',
+      pages: b.pages ? String(b.pages) : '200',
+      language: b.language || 'Bahasa Indonesia',
+      categoryId: b.categoryId ? String(b.categoryId) : '1',
+      description: b.description || '',
+      coverImage: b.coverImage || '',
+    });
+    setBookModalOpen(true);
+  };
+
+  const handleSaveBook = async (e) => {
+    e.preventDefault();
+    if (!bookFormData.title.trim() || !bookFormData.author.trim() || !bookFormData.description.trim()) {
+      showToast('Judul, penulis, dan deskripsi buku wajib diisi.', 'error');
+      return;
+    }
+
+    try {
+      setIsSubmittingBook(true);
+      if (bookModalMode === 'create') {
+        const res = await adminService.createBook(bookFormData);
+        showToast(res.message || 'Buku baru berhasil ditambahkan ke katalog!', 'success');
+      } else {
+        const res = await adminService.updateBook(selectedBook.id, bookFormData);
+        showToast(res.message || 'Katalog buku berhasil diperbarui!', 'success');
+      }
+      setBookModalOpen(false);
+      await fetchAdminData();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menyimpan data buku.', 'error');
+    } finally {
+      setIsSubmittingBook(false);
+    }
+  };
+
+  const handleOpenDeleteBook = (b) => {
+    setBookToDelete(b);
+    setDeleteBookModalOpen(true);
+  };
+
+  const handleConfirmDeleteBook = async () => {
+    if (!bookToDelete) return;
+    try {
+      setIsSubmittingDeleteBook(true);
+      const res = await adminService.deleteBook(bookToDelete.id);
+      showToast(res.message || 'Buku berhasil dihapus dari katalog.', 'success');
+      setDeleteBookModalOpen(false);
+      setBookToDelete(null);
+      await fetchAdminData();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menghapus buku.', 'error');
+    } finally {
+      setIsSubmittingDeleteBook(false);
+    }
+  };
+
+  // Order Handlers
+  const handleOpenUpdateOrderStatus = (order) => {
+    setSelectedOrder(order);
+    setNewOrderStatus(order.status || 'CONFIRMED');
+    setOrderStatusModalOpen(true);
+  };
+
+  const handleSaveOrderStatus = async (e) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+    try {
+      setIsSubmittingOrderStatus(true);
+      const res = await adminService.updateOrderStatus(selectedOrder.id, newOrderStatus);
+      showToast(res.message || `Status pesanan #${selectedOrder.orderNumber} berhasil diubah!`, 'success');
+      setOrderStatusModalOpen(false);
+      await fetchAdminData();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal memperbarui status pesanan.', 'error');
+    } finally {
+      setIsSubmittingOrderStatus(false);
+    }
+  };
+
+  const handleOpenDeleteOrder = (order) => {
+    setOrderToDelete(order);
+    setDeleteOrderModalOpen(true);
+  };
+
+  const handleConfirmDeleteOrder = async () => {
+    if (!orderToDelete) return;
+    try {
+      setIsSubmittingDeleteOrder(true);
+      const res = await adminService.deleteOrder(orderToDelete.id);
+      showToast(res.message || 'Pesanan berhasil dihapus.', 'success');
+      setDeleteOrderModalOpen(false);
+      setOrderToDelete(null);
+      await fetchAdminData();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menghapus pesanan.', 'error');
+    } finally {
+      setIsSubmittingDeleteOrder(false);
+    }
+  };
+
+  // Borrowing Handlers
+  const handleOpenUpdateBorrowingStatus = (borrowing) => {
+    setSelectedBorrowing(borrowing);
+    setNewBorrowingStatus(borrowing.status || 'APPROVED');
+    setBorrowingNotes(borrowing.notes || '');
+    setBorrowingStatusModalOpen(true);
+  };
+
+  const handleSaveBorrowingStatus = async (e) => {
+    e.preventDefault();
+    if (!selectedBorrowing) return;
+    try {
+      setIsSubmittingBorrowingStatus(true);
+      const res = await adminService.updateBorrowingStatus(selectedBorrowing.id, newBorrowingStatus, borrowingNotes);
+      showToast(res.message || 'Status peminjaman berhasil diperbarui!', 'success');
+      setBorrowingStatusModalOpen(false);
+      await fetchAdminData();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal memperbarui status peminjaman.', 'error');
+    } finally {
+      setIsSubmittingBorrowingStatus(false);
+    }
+  };
+
+  const handleOpenDeleteBorrowing = (borrowing) => {
+    setBorrowingToDelete(borrowing);
+    setDeleteBorrowingModalOpen(true);
+  };
+
+  const handleConfirmDeleteBorrowing = async () => {
+    if (!borrowingToDelete) return;
+    try {
+      setIsSubmittingDeleteBorrowing(true);
+      const res = await adminService.deleteBorrowing(borrowingToDelete.id);
+      showToast(res.message || 'Data peminjaman berhasil dihapus.', 'success');
+      setDeleteBorrowingModalOpen(false);
+      setBorrowingToDelete(null);
+      await fetchAdminData();
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Gagal menghapus data peminjaman.', 'error');
+    } finally {
+      setIsSubmittingDeleteBorrowing(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -330,10 +582,40 @@ export const AdminDashboardPage = () => {
   });
 
   // Filtered books
-  const filteredBooks = booksList.filter((b) =>
-    b.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    b.author?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredBooks = booksList.filter((b) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      b.title?.toLowerCase().includes(q) ||
+      b.author?.toLowerCase().includes(q) ||
+      b.publisher?.toLowerCase().includes(q) ||
+      b.isbn?.toLowerCase().includes(q)
+    );
+  });
+
+  // Filtered orders
+  const filteredOrders = ordersList.filter((ord) => {
+    const q = searchQuery.toLowerCase();
+    const matchSearch =
+      ord.orderNumber?.toLowerCase().includes(q) ||
+      ord.customerName?.toLowerCase().includes(q) ||
+      ord.customerPhone?.toLowerCase().includes(q) ||
+      ord.store?.name?.toLowerCase().includes(q);
+    const matchStatus = orderStatusFilter === 'ALL' || ord.status === orderStatusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  // Filtered borrowings
+  const filteredBorrowings = borrowingsList.filter((b) => {
+    const q = searchQuery.toLowerCase();
+    const matchSearch =
+      b.user?.name?.toLowerCase().includes(q) ||
+      b.user?.email?.toLowerCase().includes(q) ||
+      b.user?.phone?.toLowerCase().includes(q) ||
+      b.book?.title?.toLowerCase().includes(q) ||
+      b.library?.name?.toLowerCase().includes(q);
+    const matchStatus = borrowStatusFilter === 'ALL' || b.status === borrowStatusFilter;
+    return matchSearch && matchStatus;
+  });
 
   return (
     <div className="space-y-8">
@@ -497,6 +779,30 @@ export const AdminDashboardPage = () => {
         >
           <BookOpen className="w-4 h-4" />
           Katalog Buku ({booksList.length})
+        </button>
+
+        <button
+          onClick={() => setSearchParams({ tab: 'orders' })}
+          className={`px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5 ${
+            currentTab === 'orders'
+              ? 'border-[#075E54] text-[#075E54]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <ShoppingBag className="w-4 h-4" />
+          Pesanan Buku ({ordersList.length})
+        </button>
+
+        <button
+          onClick={() => setSearchParams({ tab: 'borrowings' })}
+          className={`px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors border-b-2 flex items-center gap-1.5 ${
+            currentTab === 'borrowings'
+              ? 'border-[#075E54] text-[#075E54]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <BookMarked className="w-4 h-4" />
+          Peminjaman ({borrowingsList.length})
         </button>
       </div>
 
@@ -841,6 +1147,9 @@ export const AdminDashboardPage = () => {
       {/* ===================================================================== */}
       {/* TAB 5: KATALOG BUKU */}
       {/* ===================================================================== */}
+      {/* ===================================================================== */}
+      {/* TAB 5: KATALOG BUKU */}
+      {/* ===================================================================== */}
       {currentTab === 'books' && (
         <div className="bg-white p-6 rounded-3xl border border-[#E5E7EB] shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -848,13 +1157,18 @@ export const AdminDashboardPage = () => {
               <h3 className="font-bold text-base text-[#17211D]">Master Data Katalog Buku</h3>
               <p className="text-xs text-gray-500">Semua judul buku yang terdaftar di sistem MABBACA</p>
             </div>
-            <input
-              type="text"
-              placeholder="Cari judul / penulis..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full sm:w-64 p-2 rounded-xl border border-gray-200 text-xs"
-            />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="Cari judul / penulis..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-56 p-2 rounded-xl border border-gray-200 text-xs"
+              />
+              <Button size="sm" variant="primary" onClick={handleOpenAddBook} className="whitespace-nowrap">
+                <Plus className="w-3.5 h-3.5 mr-1" /> Tambah Judul Buku
+              </Button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -863,14 +1177,15 @@ export const AdminDashboardPage = () => {
                 <tr>
                   <th className="p-3">Cover</th>
                   <th className="p-3">Judul Buku</th>
-                  <th className="p-3">Penulis</th>
+                  <th className="p-3">Penulis & Penerbit</th>
                   <th className="p-3">Kategori</th>
                   <th className="p-3">Rating</th>
+                  <th className="p-3 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredBooks.map((b) => (
-                  <tr key={b.id} className="hover:bg-gray-50/60">
+                  <tr key={b.id} className="hover:bg-gray-50/60 transition-colors">
                     <td className="p-3">
                       <ImageWithFallback
                         src={b.coverImage}
@@ -878,19 +1193,320 @@ export const AdminDashboardPage = () => {
                         className="w-8 h-11 object-cover rounded-md"
                       />
                     </td>
-                    <td className="p-3 font-bold text-[#17211D]">{b.title}</td>
-                    <td className="p-3 text-gray-600">{b.author}</td>
+                    <td className="p-3">
+                      <p className="font-bold text-[#17211D]">{b.title}</p>
+                      {b.isbn && <p className="text-gray-400 text-[10px]">ISBN: {b.isbn}</p>}
+                    </td>
+                    <td className="p-3 text-gray-600">
+                      <p className="font-medium text-gray-800">{b.author}</p>
+                      {b.publisher && <p className="text-gray-400 text-[10px]">{b.publisher}</p>}
+                    </td>
                     <td className="p-3">
                       <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[11px]">
                         {b.category?.name || 'Umum'}
                       </span>
                     </td>
-                    <td className="p-3 font-semibold text-amber-600">★ {b.rating || '5.0'}</td>
+                    <td className="p-3 font-semibold text-amber-600 whitespace-nowrap">★ {b.rating || '5.0'}</td>
+                    <td className="p-3 text-right whitespace-nowrap space-x-1.5">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenEditBook(b)}
+                        title="Edit Buku"
+                        className="px-2.5 py-1 text-xs"
+                      >
+                        <Edit className="w-3.5 h-3.5 text-blue-600 mr-1" /> Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => handleOpenDeleteBook(b)}
+                        title="Hapus Buku"
+                        className="px-2.5 py-1 text-xs"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB 6: PESANAN BUKU (TRANSAKSI TOKO BUKU) */}
+      {/* ===================================================================== */}
+      {currentTab === 'orders' && (
+        <div className="bg-white p-6 rounded-3xl border border-[#E5E7EB] shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-base text-[#17211D]">Transaksi Pesanan Buku MABBACA</h3>
+              <p className="text-xs text-gray-500">
+                Semua pesanan buku warga Sidrap dari mitra toko buku lokal via WhatsApp & platform
+              </p>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="Cari no order / pemesan / toko..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-60 p-2 rounded-xl border border-gray-200 text-xs"
+              />
+              <select
+                value={orderStatusFilter}
+                onChange={(e) => setOrderStatusFilter(e.target.value)}
+                className="p-2 rounded-xl border border-gray-200 text-xs"
+              >
+                {ORDER_STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {filteredOrders.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50 text-gray-500 uppercase font-semibold">
+                  <tr>
+                    <th className="p-3">No. Pesanan</th>
+                    <th className="p-3">Mitra Toko</th>
+                    <th className="p-3">Pelanggan</th>
+                    <th className="p-3">Item Buku</th>
+                    <th className="p-3">Total Tagihan</th>
+                    <th className="p-3">Tanggal</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredOrders.map((ord) => (
+                    <tr key={ord.id} className="hover:bg-gray-50/60 transition-colors">
+                      <td className="p-3 font-mono font-bold text-[#075E54]">
+                        #{ord.orderNumber}
+                      </td>
+                      <td className="p-3 font-medium text-gray-800">
+                        <div className="flex items-center gap-1.5">
+                          <Store className="w-3.5 h-3.5 text-[#0F766E] shrink-0" />
+                          <span>{ord.store?.name || 'Toko Buku Sidrap'}</span>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <p className="font-bold text-[#17211D]">{ord.customerName}</p>
+                        <p className="text-gray-400 text-[11px]">📞 {ord.customerPhone}</p>
+                        {ord.customerAddress && (
+                          <p className="text-gray-400 text-[10px] truncate max-w-xs">{ord.customerAddress}</p>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <div className="max-w-xs">
+                          {ord.items && ord.items.length > 0 ? (
+                            ord.items.map((it, idx) => (
+                              <p key={idx} className="text-gray-700 text-[11px] truncate">
+                                • {it.book?.title || 'Buku'} ({it.quantity}x)
+                              </p>
+                            ))
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-3 font-bold text-[#075E54] whitespace-nowrap">
+                        Rp {Number(ord.totalAmount).toLocaleString('id-ID')}
+                      </td>
+                      <td className="p-3 text-gray-500 whitespace-nowrap">
+                        {new Date(ord.createdAt).toLocaleDateString('id-ID')}
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={`px-2 py-0.5 rounded-full font-semibold text-[10px] ${
+                            ord.status === 'COMPLETED'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : ord.status === 'CONFIRMED'
+                              ? 'bg-blue-100 text-blue-800'
+                              : ord.status === 'CONTACTED'
+                              ? 'bg-teal-100 text-teal-800'
+                              : ord.status === 'CANCELLED'
+                              ? 'bg-rose-100 text-rose-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {ord.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right whitespace-nowrap space-x-1.5">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenUpdateOrderStatus(ord)}
+                          title="Ubah Status Pesanan"
+                          className="px-2.5 py-1 text-xs"
+                        >
+                          <Edit className="w-3.5 h-3.5 text-blue-600 mr-1" /> Status
+                        </Button>
+                        <a
+                          href={`https://wa.me/${ord.customerPhone?.replace(/^0/, '62').replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#075E54] font-semibold text-xs border border-emerald-200 transition-colors"
+                          title="Hubungi Pemesan via WhatsApp"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 text-[#075E54]" /> WA
+                        </a>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleOpenDeleteOrder(ord)}
+                          title="Hapus Pesanan"
+                          className="px-2.5 py-1 text-xs"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <EmptyState
+              icon={ShoppingBag}
+              title="Tidak ada transaksi pesanan"
+              description="Belum ada pesanan buku yang sesuai dengan pencarian atau filter status."
+            />
+          )}
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB 7: PEMINJAMAN BUKU PERPUSTAKAAN */}
+      {/* ===================================================================== */}
+      {currentTab === 'borrowings' && (
+        <div className="bg-white p-6 rounded-3xl border border-[#E5E7EB] shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-base text-[#17211D]">Sirkulasi Peminjaman Buku Fisik Perpustakaan</h3>
+              <p className="text-xs text-gray-500">
+                Peminjaman koleksi buku masyarakat dari Perpustakaan Daerah & Desa se-Kabupaten Sidrap
+              </p>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="Cari peminjam / buku / perpustakaan..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-60 p-2 rounded-xl border border-gray-200 text-xs"
+              />
+              <select
+                value={borrowStatusFilter}
+                onChange={(e) => setBorrowStatusFilter(e.target.value)}
+                className="p-2 rounded-xl border border-gray-200 text-xs"
+              >
+                {BORROW_STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {filteredBorrowings.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-gray-50 text-gray-500 uppercase font-semibold">
+                  <tr>
+                    <th className="p-3">ID</th>
+                    <th className="p-3">Pemustaka (Peminjam)</th>
+                    <th className="p-3">Buku Dipinjam</th>
+                    <th className="p-3">Perpustakaan</th>
+                    <th className="p-3">Tgl Pinjam</th>
+                    <th className="p-3">Jatuh Tempo</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredBorrowings.map((b) => (
+                    <tr key={b.id} className="hover:bg-gray-50/60 transition-colors">
+                      <td className="p-3 font-mono font-bold text-gray-500">#{b.id}</td>
+                      <td className="p-3">
+                        <p className="font-bold text-[#17211D]">{b.user?.name || 'Masyarakat'}</p>
+                        <p className="text-gray-400 text-[11px]">{b.user?.email || b.user?.phone || '-'}</p>
+                      </td>
+                      <td className="p-3 font-semibold text-gray-800">
+                        {b.book?.title || 'Judul Buku'}
+                        {b.quantity > 1 && <span className="text-gray-400 text-[11px] ml-1">({b.quantity} eks)</span>}
+                      </td>
+                      <td className="p-3 font-medium text-[#0F766E]">
+                        <div className="flex items-center gap-1">
+                          <Landmark className="w-3.5 h-3.5 shrink-0" />
+                          <span>{b.library?.name || 'Perpustakaan Sidrap'}</span>
+                        </div>
+                      </td>
+                      <td className="p-3 text-gray-500 whitespace-nowrap">
+                        {new Date(b.requestedAt || b.createdAt).toLocaleDateString('id-ID')}
+                      </td>
+                      <td className="p-3 font-medium text-gray-700 whitespace-nowrap">
+                        {b.dueDate ? new Date(b.dueDate).toLocaleDateString('id-ID') : '-'}
+                      </td>
+                      <td className="p-3">
+                        <span
+                          className={`px-2 py-0.5 rounded-full font-semibold text-[10px] ${
+                            b.status === 'RETURNED'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : b.status === 'BORROWED'
+                              ? 'bg-blue-100 text-blue-800'
+                              : b.status === 'APPROVED'
+                              ? 'bg-teal-100 text-teal-800'
+                              : b.status === 'OVERDUE'
+                              ? 'bg-rose-100 text-rose-800'
+                              : b.status === 'REJECTED'
+                              ? 'bg-gray-200 text-gray-700'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {b.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right whitespace-nowrap space-x-1.5">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenUpdateBorrowingStatus(b)}
+                          title="Ubah Status Peminjaman"
+                          className="px-2.5 py-1 text-xs"
+                        >
+                          <Edit className="w-3.5 h-3.5 text-blue-600 mr-1" /> Status
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleOpenDeleteBorrowing(b)}
+                          title="Hapus Data Peminjaman"
+                          className="px-2.5 py-1 text-xs"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <EmptyState
+              icon={BookMarked}
+              title="Tidak ada sirkulasi peminjaman"
+              description="Belum ada peminjaman buku yang sesuai dengan pencarian atau filter status."
+            />
+          )}
         </div>
       )}
 
@@ -1238,6 +1854,412 @@ export const AdminDashboardPage = () => {
             >
               <Trash2 className="w-3.5 h-3.5 mr-1" />
               Ya, Hapus Sekarang
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* BOOK ADD / EDIT MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={bookModalOpen}
+        onClose={() => setBookModalOpen(false)}
+        title={bookModalMode === 'create' ? 'Tambah Judul Buku Baru' : 'Edit Data Buku'}
+      >
+        <form onSubmit={handleSaveBook} className="space-y-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block font-medium text-gray-700 mb-1">Judul Buku *</label>
+              <input
+                type="text"
+                required
+                value={bookFormData.title}
+                onChange={(e) => setBookFormData({ ...bookFormData, title: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                placeholder="Contoh: Menelusuri Jejak Sejarah Sidrap"
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Penulis *</label>
+              <input
+                type="text"
+                required
+                value={bookFormData.author}
+                onChange={(e) => setBookFormData({ ...bookFormData, author: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                placeholder="Nama Pengarang / Penulis"
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Penerbit</label>
+              <input
+                type="text"
+                value={bookFormData.publisher}
+                onChange={(e) => setBookFormData({ ...bookFormData, publisher: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                placeholder="Contoh: Balai Pustaka / Kompas Gramedia"
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">ISBN</label>
+              <input
+                type="text"
+                value={bookFormData.isbn}
+                onChange={(e) => setBookFormData({ ...bookFormData, isbn: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                placeholder="978-602-xxx-xxx-x"
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Kategori Buku</label>
+              <select
+                value={bookFormData.categoryId}
+                onChange={(e) => setBookFormData({ ...bookFormData, categoryId: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+              >
+                {categoriesList && categoriesList.length > 0 ? (
+                  categoriesList.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="1">Fiksi</option>
+                    <option value="2">Non-Fiksi</option>
+                    <option value="3">Sejarah & Budaya</option>
+                    <option value="4">Pendidikan</option>
+                    <option value="5">Sains & Teknologi</option>
+                  </>
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Tahun Terbit</label>
+              <input
+                type="number"
+                value={bookFormData.publishYear}
+                onChange={(e) => setBookFormData({ ...bookFormData, publishYear: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                placeholder="2024"
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium text-gray-700 mb-1">Jumlah Halaman</label>
+              <input
+                type="number"
+                value={bookFormData.pages}
+                onChange={(e) => setBookFormData({ ...bookFormData, pages: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                placeholder="200"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block font-medium text-gray-700 mb-1">URL Cover / Gambar Buku</label>
+              <input
+                type="text"
+                value={bookFormData.coverImage}
+                onChange={(e) => setBookFormData({ ...bookFormData, coverImage: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                placeholder="https://... atau path gambar"
+              />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block font-medium text-gray-700 mb-1">Sinopsis / Deskripsi Buku *</label>
+              <textarea
+                rows={3}
+                required
+                value={bookFormData.description}
+                onChange={(e) => setBookFormData({ ...bookFormData, description: e.target.value })}
+                className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+                placeholder="Ringkasan atau sinopsis buku..."
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setBookModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              isLoading={isSubmittingBook}
+            >
+              <Save className="w-3.5 h-3.5 mr-1" />
+              {bookModalMode === 'create' ? 'Tambahkan ke Katalog' : 'Simpan Perubahan'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* DELETE BOOK MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={deleteBookModalOpen}
+        onClose={() => setDeleteBookModalOpen(false)}
+        title="Hapus Buku dari Katalog"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="bg-red-50 p-4 rounded-2xl border border-red-200 text-red-800 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-sm text-red-900">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+              Konfirmasi Penghapusan Buku
+            </div>
+            <p>
+              Apakah Anda yakin ingin menghapus judul buku:
+              <br />
+              <strong className="text-base text-red-950 font-bold block mt-1">"{bookToDelete?.title}"</strong>
+              <span className="text-gray-600">Karya: {bookToDelete?.author}</span>
+            </p>
+            <p className="text-[11px] text-red-700">
+              Perhatian: Buku ini akan dihapus dari katalog utama MABBACA.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteBookModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              isLoading={isSubmittingDeleteBook}
+              onClick={handleConfirmDeleteBook}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Ya, Hapus Buku
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* ORDER STATUS MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={orderStatusModalOpen}
+        onClose={() => setOrderStatusModalOpen(false)}
+        title={`Update Status Pesanan #${selectedOrder?.orderNumber || ''}`}
+      >
+        <form onSubmit={handleSaveOrderStatus} className="space-y-4 text-xs">
+          <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 space-y-1 text-emerald-950">
+            <p><strong>Pembeli:</strong> {selectedOrder?.user?.name} ({selectedOrder?.user?.email})</p>
+            <p><strong>Toko Buku Mitra:</strong> {selectedOrder?.store?.name}</p>
+            <p><strong>Total Transaksi:</strong> {formatRupiah(selectedOrder?.totalAmount)}</p>
+          </div>
+
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">Status Transaksi Pesanan</label>
+            <select
+              value={newOrderStatus}
+              onChange={(e) => setNewOrderStatus(e.target.value)}
+              className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-semibold focus:ring-1 focus:ring-[#075E54]"
+            >
+              {ORDER_STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setOrderStatusModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              isLoading={isSubmittingOrderStatus}
+            >
+              <Save className="w-3.5 h-3.5 mr-1" />
+              Perbarui Status Pesanan
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* DELETE ORDER MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={deleteOrderModalOpen}
+        onClose={() => setDeleteOrderModalOpen(false)}
+        title="Hapus Data Pesanan"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="bg-red-50 p-4 rounded-2xl border border-red-200 text-red-800 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-sm text-red-900">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+              Konfirmasi Hapus Pesanan
+            </div>
+            <p>
+              Apakah Anda yakin ingin menghapus data pesanan <strong>#{orderToDelete?.orderNumber}</strong>?
+            </p>
+            <p className="text-[11px] text-red-700">
+              Tindakan ini akan menghapus riwayat transaksi dan rincian item pesanan secara permanen dari database.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteOrderModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              isLoading={isSubmittingDeleteOrder}
+              onClick={handleConfirmDeleteOrder}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Ya, Hapus Pesanan
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* BORROWING STATUS MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={borrowingStatusModalOpen}
+        onClose={() => setBorrowingStatusModalOpen(false)}
+        title="Update Status Sirkulasi Peminjaman"
+      >
+        <form onSubmit={handleSaveBorrowingStatus} className="space-y-4 text-xs">
+          <div className="bg-teal-50 p-3 rounded-xl border border-teal-200 space-y-1 text-teal-950">
+            <p><strong>Peminjam:</strong> {selectedBorrowing?.user?.name}</p>
+            <p><strong>Buku:</strong> {selectedBorrowing?.collection?.book?.title}</p>
+            <p><strong>Perpustakaan:</strong> {selectedBorrowing?.collection?.library?.name}</p>
+          </div>
+
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">Status Peminjaman</label>
+            <select
+              value={newBorrowingStatus}
+              onChange={(e) => setNewBorrowingStatus(e.target.value)}
+              className="w-full p-2.5 rounded-xl border border-gray-200 text-xs font-semibold focus:ring-1 focus:ring-[#075E54]"
+            >
+              {BORROW_STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-medium text-gray-700 mb-1">Catatan Tambahan (Opsional)</label>
+            <textarea
+              rows={2}
+              value={borrowingNotes}
+              onChange={(e) => setBorrowingNotes(e.target.value)}
+              className="w-full p-2.5 rounded-xl border border-gray-200 text-xs focus:ring-1 focus:ring-[#075E54]"
+              placeholder="Kondisi buku saat kembali, denda, atau alasan penolakan..."
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setBorrowingStatusModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              isLoading={isSubmittingBorrowingStatus}
+            >
+              <Save className="w-3.5 h-3.5 mr-1" />
+              Simpan Status Peminjaman
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ===================================================================== */}
+      {/* DELETE BORROWING MODAL */}
+      {/* ===================================================================== */}
+      <Modal
+        isOpen={deleteBorrowingModalOpen}
+        onClose={() => setDeleteBorrowingModalOpen(false)}
+        title="Hapus Data Peminjaman"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="bg-red-50 p-4 rounded-2xl border border-red-200 text-red-800 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-sm text-red-900">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0" />
+              Konfirmasi Hapus Riwayat Peminjaman
+            </div>
+            <p>
+              Apakah Anda yakin ingin menghapus data peminjaman buku:
+              <br />
+              <strong className="text-red-950 font-bold">"{borrowingToDelete?.collection?.book?.title}"</strong>
+              <br />
+              Peminjam: <strong>{borrowingToDelete?.user?.name}</strong>
+            </p>
+            <p className="text-[11px] text-red-700">
+              Catatan: Menghapus data ini tidak akan mengubah stok buku yang sudah ada di perpustakaan.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteBorrowingModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              variant="danger"
+              size="sm"
+              isLoading={isSubmittingDeleteBorrowing}
+              onClick={handleConfirmDeleteBorrowing}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Ya, Hapus Peminjaman
             </Button>
           </div>
         </div>

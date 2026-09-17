@@ -24,5 +24,7 @@ router.get('/:id', authenticate, borrowingController.getBorrowingById);
 router.put('/:id/approve', authenticate, requireApprovedMitra, borrowingController.approveBorrowing);
 router.put('/:id/reject', authenticate, requireApprovedMitra, borrowingController.rejectBorrowing);
 router.put('/:id/return', authenticate, requireApprovedMitra, borrowingController.returnBorrowing);
+router.put('/:id/status', authenticate, requireApprovedMitra, borrowingController.updateBorrowingStatus);
+router.delete('/:id', authenticate, borrowingController.deleteBorrowing);
 
 module.exports = router;

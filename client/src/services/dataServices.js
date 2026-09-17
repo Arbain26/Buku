@@ -26,17 +26,17 @@ export const bookService = {
     return res.data;
   },
 
-  async createBook(formData) {
-    const res = await api.post('/books', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+  async createBook(data) {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    const res = await api.post('/books', data, config);
     return res.data;
   },
 
-  async updateBook(id, formData) {
-    const res = await api.put(`/books/${id}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+  async updateBook(id, data) {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    const res = await api.put(`/books/${id}`, data, config);
     return res.data;
   },
 
@@ -112,6 +112,11 @@ export const eventService = {
     const res = await api.post('/events', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return res.data;
+  },
+
+  async deleteEvent(id) {
+    const res = await api.delete(`/events/${id}`);
     return res.data;
   },
 };
@@ -218,6 +223,11 @@ export const orderService = {
     const res = await api.put(`/orders/${id}/status`, { status });
     return res.data;
   },
+
+  async deleteOrder(id) {
+    const res = await api.delete(`/orders/${id}`);
+    return res.data;
+  },
 };
 
 export const borrowingService = {
@@ -248,6 +258,16 @@ export const borrowingService = {
 
   async returnBorrowing(id) {
     const res = await api.put(`/borrowings/${id}/return`);
+    return res.data;
+  },
+
+  async updateBorrowingStatus(id, status, notes) {
+    const res = await api.put(`/borrowings/${id}/status`, { status, notes });
+    return res.data;
+  },
+
+  async deleteBorrowing(id) {
+    const res = await api.delete(`/borrowings/${id}`);
     return res.data;
   },
 };
@@ -386,6 +406,60 @@ export const adminService = {
 
   async getReports() {
     const res = await api.get('/admin/reports');
+    return res.data;
+  },
+
+  async getOrders(params) {
+    const res = await api.get('/orders', { params });
+    return res.data;
+  },
+
+  async updateOrderStatus(id, status) {
+    const res = await api.put(`/orders/${id}/status`, { status });
+    return res.data;
+  },
+
+  async deleteOrder(id) {
+    const res = await api.delete(`/orders/${id}`);
+    return res.data;
+  },
+
+  async getBorrowings(params) {
+    const res = await api.get('/borrowings', { params });
+    return res.data;
+  },
+
+  async updateBorrowingStatus(id, status, notes) {
+    const res = await api.put(`/borrowings/${id}/status`, { status, notes });
+    return res.data;
+  },
+
+  async deleteBorrowing(id) {
+    const res = await api.delete(`/borrowings/${id}`);
+    return res.data;
+  },
+
+  async createBook(data) {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    const res = await api.post('/books', data, config);
+    return res.data;
+  },
+
+  async updateBook(id, data) {
+    const isFormData = typeof FormData !== 'undefined' && data instanceof FormData;
+    const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    const res = await api.put(`/books/${id}`, data, config);
+    return res.data;
+  },
+
+  async deleteBook(id) {
+    const res = await api.delete(`/books/${id}`);
+    return res.data;
+  },
+
+  async getCategories() {
+    const res = await api.get('/categories');
     return res.data;
   },
 };

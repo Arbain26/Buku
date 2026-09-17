@@ -18,6 +18,7 @@ router.post('/', optionalAuth, orderValidation, validate, orderController.create
 router.get('/', authenticate, orderController.getOrders);
 router.get('/:id', authenticate, orderController.getOrderById);
 router.put('/:id/status', authenticate, requireApprovedMitra, orderController.updateOrderStatus);
+router.delete('/:id', authenticate, orderController.deleteOrder);
 router.post('/:id/contact-whatsapp', optionalAuth, orderController.contactWhatsapp);
 
 module.exports = router;

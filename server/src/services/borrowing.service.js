@@ -339,6 +339,84 @@ class BorrowingService {
       return updated;
     });
   }
+
+  // Update borrowing status directly (Admin or Library owner Mitra)
+  async updateBorrowingStatus(id, status, notes, user) {
+    const borrowId = parseInt(id);
+    const borrowing = await prisma.borrowing.findUnique({
+      where: { id: borrowId },
+      include: { library: true, book: true, collection: true },
+    });
+
+    if (!borrowing) {
+      const error = new Error('Data peminjaman tidak ditemukan.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (user.role === 'MITRA' && (!user.mitraProfile || borrowing.library.mitraId !== user.mitraProfile.id)) {
+      const error = new Error('Anda tidak memiliki izin mengelola peminjaman perpustakaan ini.');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    return prisma.$transaction(async (tx) => {
+      const updateData = { status };
+      if (notes !== undefined) updateData.notes = notes;
+
+      if (status === 'APPROVED' || status === 'BORROWED') {
+        if (!borrowing.borrowedAt) updateData.borrowedAt = new Date();
+        if (!borrowing.approvedAt) updateData.approvedAt = new Date();
+      } else if (status === 'RETURNED') {
+        updateData.returnedAt = new Date();
+        if (borrowing.collection && borrowing.status !== 'RETURNED') {
+          await tx.libraryCollection.update({
+            where: { id: borrowing.collection.id },
+            data: {
+              availableQuantity: { increment: borrowing.quantity },
+              isAvailable: true,
+            },
+          });
+        }
+      }
+
+      const updated = await tx.borrowing.update({
+        where: { id: borrowId },
+        data: updateData,
+        include: {
+          user: { select: { id: true, name: true, phone: true, email: true } },
+          book: true,
+          library: true,
+        },
+      });
+
+      return updated;
+    });
+  }
+
+  // Delete borrowing (Admin or Library owner Mitra)
+  async deleteBorrowing(id, user) {
+    const borrowId = parseInt(id);
+    const borrowing = await prisma.borrowing.findUnique({
+      where: { id: borrowId },
+      include: { library: true },
+    });
+
+    if (!borrowing) {
+      const error = new Error('Data peminjaman tidak ditemukan.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (user.role === 'MITRA' && (!user.mitraProfile || borrowing.library.mitraId !== user.mitraProfile.id)) {
+      const error = new Error('Anda tidak memiliki izin menghapus peminjaman perpustakaan ini.');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    await prisma.borrowing.delete({ where: { id: borrowId } });
+    return { id: borrowId, message: 'Data peminjaman berhasil dihapus.' };
+  }
 }
 
 module.exports = new BorrowingService();

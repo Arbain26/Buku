@@ -67,6 +67,25 @@ const returnBorrowing = async (req, res, next) => {
   }
 };
 
+const updateBorrowingStatus = async (req, res, next) => {
+  try {
+    const { status, notes } = req.body;
+    const updated = await borrowingService.updateBorrowingStatus(req.params.id, status, notes, req.user);
+    return successResponse(res, `Status peminjaman berhasil diperbarui menjadi ${status}.`, updated);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteBorrowing = async (req, res, next) => {
+  try {
+    const result = await borrowingService.deleteBorrowing(req.params.id, req.user);
+    return successResponse(res, result.message, result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getBorrowings,
   getBorrowingById,
@@ -74,4 +93,6 @@ module.exports = {
   approveBorrowing,
   rejectBorrowing,
   returnBorrowing,
+  updateBorrowingStatus,
+  deleteBorrowing,
 };

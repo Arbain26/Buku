@@ -326,6 +326,34 @@ class OrderService {
       whatsappUrl: waLink,
     };
   }
+
+  // Delete order (Admin or Store owner Mitra)
+  async deleteOrder(id, user) {
+    const orderId = parseInt(id);
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { store: true },
+    });
+
+    if (!order) {
+      const error = new Error('Pesanan tidak ditemukan.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (user.role === 'MITRA' && (!user.mitraProfile || order.store.mitraId !== user.mitraProfile.id)) {
+      const error = new Error('Anda tidak berwenang menghapus pesanan toko ini.');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.orderItem.deleteMany({ where: { orderId } });
+      await tx.order.delete({ where: { id: orderId } });
+    });
+
+    return { id: orderId, message: 'Pesanan berhasil dihapus.' };
+  }
 }
 
 module.exports = new OrderService();
