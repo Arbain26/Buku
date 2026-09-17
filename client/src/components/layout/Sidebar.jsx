@@ -34,6 +34,7 @@ export const Sidebar = ({ isMobileOpen, onClose, type = 'mitra' }) => {
       { name: 'Profil Toko', path: '/mitra/dashboard?tab=profile', icon: Building2 },
       { name: 'Produk Buku', path: '/mitra/dashboard?tab=products', icon: BookOpen },
       { name: 'Pesanan Masuk', path: '/mitra/dashboard?tab=orders', icon: ShoppingBag },
+      { name: 'Agenda Kegiatan', path: '/mitra/dashboard?tab=events', icon: Calendar },
       { name: 'Statistik', path: '/mitra/dashboard?tab=stats', icon: BarChart3 },
     ];
   } else if (mitraType === 'PERPUSTAKAAN') {
@@ -42,7 +43,7 @@ export const Sidebar = ({ isMobileOpen, onClose, type = 'mitra' }) => {
       { name: 'Profil Perpustakaan', path: '/mitra/dashboard?tab=profile', icon: Building2 },
       { name: 'Koleksi', path: '/mitra/dashboard?tab=collections', icon: BookMarked },
       { name: 'Peminjaman', path: '/mitra/dashboard?tab=borrowings', icon: BookOpen },
-      { name: 'Event', path: '/mitra/dashboard?tab=events', icon: Calendar },
+      { name: 'Agenda Kegiatan', path: '/mitra/dashboard?tab=events', icon: Calendar },
       { name: 'Statistik', path: '/mitra/dashboard?tab=stats', icon: BarChart3 },
     ];
   } else if (mitraType === 'KOMUNITAS') {

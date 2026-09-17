@@ -984,17 +984,27 @@ export const MitraDashboardPage = () => {
           </p>
         </div>
 
-        {(mitraType === 'TOKO_BUKU' || mitraType === 'PERPUSTAKAAN') && (
+        <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+          {(mitraType === 'TOKO_BUKU' || mitraType === 'PERPUSTAKAAN') && (
+            <Button
+              size="md"
+              variant="primary"
+              onClick={handleOpenAddModal}
+            >
+              <Plus className="w-4 h-4" />
+              {mitraType === 'TOKO_BUKU' ? 'Tambah Produk Buku' : 'Tambah Koleksi'}
+            </Button>
+          )}
           <Button
             size="md"
-            variant="primary"
-            onClick={handleOpenAddModal}
-            className="shrink-0"
+            variant="outline"
+            onClick={() => setIsAddEventModalOpen(true)}
+            className="bg-white border-emerald-600 text-emerald-800 hover:bg-emerald-50 shadow-2xs font-semibold"
           >
-            <Plus className="w-4 h-4" />
-            {mitraType === 'TOKO_BUKU' ? 'Tambah Produk Buku' : 'Tambah Koleksi'}
+            <Calendar className="w-4 h-4 text-emerald-700" />
+            + Buat Agenda Kegiatan
           </Button>
-        )}
+        </div>
       </div>
 
       {/* Dynamic Sub-Navigation Tabs */}
@@ -1069,7 +1079,11 @@ export const MitraDashboardPage = () => {
                   </span>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-xs">
+                <div
+                  onClick={() => setSearchParams({ tab: 'events' })}
+                  className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-xs cursor-pointer hover:border-emerald-300 hover:shadow-sm transition-all"
+                  title="Klik untuk melihat dan membuat agenda kegiatan"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-gray-500">Event Diadakan</span>
                     <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#075E54] flex items-center justify-center">
@@ -1077,8 +1091,8 @@ export const MitraDashboardPage = () => {
                     </div>
                   </div>
                   <p className="text-2xl font-bold text-[#17211D]">{metrics?.totalEvents || 0}</p>
-                  <span className="text-[11px] font-semibold text-gray-400 mt-1 block">
-                    Bedah buku & lapak
+                  <span className="text-[11px] font-semibold text-emerald-700 mt-1 flex items-center gap-1">
+                    Kelola / Buat Event →
                   </span>
                 </div>
               </>
@@ -1125,7 +1139,11 @@ export const MitraDashboardPage = () => {
                   </span>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-xs">
+                <div
+                  onClick={() => setSearchParams({ tab: 'events' })}
+                  className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-xs cursor-pointer hover:border-emerald-300 hover:shadow-sm transition-all"
+                  title="Klik untuk melihat dan membuat agenda kegiatan"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-gray-500">Event Literasi</span>
                     <div className="w-8 h-8 rounded-lg bg-emerald-50 text-[#075E54] flex items-center justify-center">
@@ -1133,8 +1151,8 @@ export const MitraDashboardPage = () => {
                     </div>
                   </div>
                   <p className="text-2xl font-bold text-[#17211D]">{metrics?.totalEvents || 0}</p>
-                  <span className="text-[11px] font-semibold text-gray-400 mt-1 block">
-                    Kegiatan membaca
+                  <span className="text-[11px] font-semibold text-emerald-700 mt-1 flex items-center gap-1">
+                    Kelola / Buat Event →
                   </span>
                 </div>
               </>
@@ -1155,7 +1173,11 @@ export const MitraDashboardPage = () => {
                   </span>
                 </div>
 
-                <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-xs">
+                <div
+                  onClick={() => setSearchParams({ tab: 'events' })}
+                  className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-xs cursor-pointer hover:border-emerald-300 hover:shadow-sm transition-all"
+                  title="Klik untuk melihat dan membuat agenda kegiatan"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-gray-500">Event & Lapak</span>
                     <div className="w-8 h-8 rounded-lg bg-teal-50 text-[#0F766E] flex items-center justify-center">
@@ -1163,8 +1185,8 @@ export const MitraDashboardPage = () => {
                     </div>
                   </div>
                   <p className="text-2xl font-bold text-[#17211D]">{metrics?.totalEvents || 0}</p>
-                  <span className="text-[11px] font-semibold text-gray-400 mt-1 block">
-                    Diskusi dan lapak baca
+                  <span className="text-[11px] font-semibold text-emerald-700 mt-1 flex items-center gap-1">
+                    Kelola / Buat Event →
                   </span>
                 </div>
 
