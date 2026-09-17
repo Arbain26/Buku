@@ -4,7 +4,6 @@ import {
   Store,
   Landmark,
   Users,
-  GraduationCap,
   TrendingUp,
   BarChart3,
   Share2,
@@ -32,11 +31,6 @@ export const MitraLandingPage = () => {
       title: 'Komunitas & Lapak Baca',
       icon: Users,
       desc: 'Ajak pemuda Sidrap berkumpul, publikasikan agenda bedah buku, dan rekrut relawan baru dengan jangkauan publik yang lebih luas.',
-    },
-    {
-      title: 'Sekolah & Pengajar',
-      icon: GraduationCap,
-      desc: 'Bagikan informasi kelas menulis, lomba literasi, dan kegiatan gemar membaca bagi para pelajar.',
     },
   ];
 
@@ -110,7 +104,7 @@ export const MitraLandingPage = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {partnerTypes.map((item) => {
             const Icon = item.icon;
             return (

@@ -60,8 +60,6 @@ export const RegisterMitraPage = () => {
     { value: 'TOKO_BUKU', label: 'Toko Buku', desc: 'Toko buku fisik atau toko baca komersial lokal' },
     { value: 'PERPUSTAKAAN', label: 'Perpustakaan', desc: 'Perpustakaan daerah, perpustakaan desa, atau TBM' },
     { value: 'KOMUNITAS', label: 'Komunitas Literasi', desc: 'Paguyuban pemuda, relawan lapak baca Sidrap' },
-    { value: 'SEKOLAH', label: 'Sekolah / Madrasah', desc: 'Institusi pendidikan formal tingkat dasar/menengah' },
-    { value: 'PENGAJAR', label: 'Pengajar / Pegiat', desc: 'Guru, dosen, atau pengajar independen literasi' },
   ];
 
   const handleChange = (e) => {
@@ -110,7 +108,7 @@ export const RegisterMitraPage = () => {
             Pendaftaran Mitra Literasi Sidrap
           </h2>
           <p className="text-xs text-[#66736D] max-w-md mx-auto">
-            Daftarkan toko buku, perpustakaan, komunitas, sekolah, atau program pengajar Anda ke dalam ekosistem resmi
+            Daftarkan toko buku, perpustakaan, atau komunitas literasi Anda ke dalam ekosistem resmi
           </p>
         </div>
 
@@ -152,7 +150,7 @@ export const RegisterMitraPage = () => {
             <label className="block text-xs font-bold text-[#17211D] mb-2">
               Pilih Jenis Mitra *
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {mitraTypes.map((t) => (
                 <label
                   key={t.value}

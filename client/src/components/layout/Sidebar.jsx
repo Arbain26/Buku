@@ -15,7 +15,6 @@ import {
   LogOut,
   X,
   Layers,
-  GraduationCap,
   Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -53,22 +52,6 @@ export const Sidebar = ({ isMobileOpen, onClose, type = 'mitra' }) => {
       { name: 'Anggota', path: '/mitra/dashboard?tab=members', icon: Users },
       { name: 'Event', path: '/mitra/dashboard?tab=events', icon: Calendar },
       { name: 'Kegiatan Literasi', path: '/mitra/dashboard?tab=events', icon: Sparkles },
-      { name: 'Statistik', path: '/mitra/dashboard?tab=stats', icon: BarChart3 },
-    ];
-  } else if (mitraType === 'SEKOLAH') {
-    mitraNavItems = [
-      { name: 'Dashboard', path: '/mitra/dashboard', icon: LayoutDashboard },
-      { name: 'Profil Sekolah', path: '/mitra/dashboard?tab=profile', icon: Building2 },
-      { name: 'Kegiatan Literasi', path: '/mitra/dashboard?tab=events', icon: BookOpen },
-      { name: 'Event', path: '/mitra/dashboard?tab=events', icon: Calendar },
-      { name: 'Statistik', path: '/mitra/dashboard?tab=stats', icon: BarChart3 },
-    ];
-  } else if (mitraType === 'PENGAJAR') {
-    mitraNavItems = [
-      { name: 'Dashboard', path: '/mitra/dashboard', icon: LayoutDashboard },
-      { name: 'Profil Pengajar', path: '/mitra/dashboard?tab=profile', icon: GraduationCap },
-      { name: 'Artikel Literasi', path: '/mitra/dashboard?tab=articles', icon: FileText },
-      { name: 'Event / Workshop', path: '/mitra/dashboard?tab=events', icon: Calendar },
       { name: 'Statistik', path: '/mitra/dashboard?tab=stats', icon: BarChart3 },
     ];
   } else {

@@ -98,7 +98,6 @@ Satu portal dashboard mitra (`/mitra/dashboard`) mampu bertransformasi secara di
 - **Toko Buku**: Menampilkan grafik omset/penjualan, produk terlaris, inventaris buku & harga, serta pesanan masuk WhatsApp.
 - **Perpustakaan**: Menampilkan sirkulasi peminjaman, permohonan pinjam aktif, manajemen nomor panggil (*call number*), rak buku, dan stok eksemplar.
 - **Komunitas**: Menampilkan manajemen relawan, anggota aktif, dan publikasi agenda kegiatan/lapak baca.
-- **Sekolah & Pengajar**: Menampilkan agenda literasi sekolah dan kelas/workshop edukasi.
 
 ### 8. Pusat Kendali Wilayah untuk Administrator (*Government & Literacy Monitoring*)
 - Dashboard Admin memetakan data literasi riil di seluruh kecamatan Kabupaten Sidrap (Pangkajene, Maritengngae, Baranti, Watang Pulu, Tellu Limpoe, Dua Pitue, Panca Rijang, Kulo, dll.).
@@ -125,7 +124,6 @@ graph TD
     C --> C1[Toko Buku Fisik]
     C --> C2[Perpustakaan Daerah & Desa]
     C --> C3[Komunitas & Lapak Baca]
-    C --> C4[Sekolah & Pengajar]
     
     B --> B1[Cari & Beli Buku via WA]
     B --> B2[Pinjam Buku Perpustakaan]
@@ -140,11 +138,10 @@ graph TD
 1. **`USER` (Masyarakat Umum / Pembaca)**:
    Masyarakat yang dapat menjelajahi ekosistem, memesan buku ke toko via WhatsApp, mengajukan pinjam ke perpustakaan, mendaftar event, bergabung ke komunitas, menulis ulasan dan rating, membaca artikel edukatif, serta menaikkan level pembaca melalui misi harian.
 2. **`MITRA` (Penyedia Literasi Lokal)**:
-   Entitas penyedia literasi berstatus seleksi (`PENDING`, `APPROVED`, `REJECTED`, `SUSPENDED`) dengan jenis spesifik:
+   Entitas penyedia literasi berstatus seleksi (`PENDING`, `APPROVED`, `REJECTED`, `SUSPENDED`) dengan 3 jenis spesifik:
    - `TOKO_BUKU`: Menjual buku fisik, mengatur stok, harga, dan memproses pesanan WhatsApp.
    - `PERPUSTAKAAN`: Menyediakan koleksi pinjaman, nomor panggil, nomor rak, dan memverifikasi peminjaman.
    - `KOMUNITAS`: Mengelola agenda lapak baca, kegiatan bedah buku, dan merangkul relawan.
-   - `SEKOLAH` & `PENGAJAR`: Menggerakkan literasi di lingkungan akademis.
 3. **`ADMIN` (Pengelola Pusat Ekosistem)**:
    Petugas yang memiliki hak akses penuh untuk memantau metrik ekosistem Sidrap, memvalidasi pendaftaran mitra baru, mengelola pengguna, dan memantau pemerataan titik literasi di seluruh kecamatan.
 
@@ -321,7 +318,7 @@ Mesin pencari terpusat yang memindai seluruh data ekosistem MABBACA secara simul
 
 - **Login Terpadu (`/login`)**: Formulir masuk dengan proteksi kata sandi, dilengkapi **tombol *Quick-Fill Demo*** untuk kemudahan pengujian akun instan (Admin, Mitra Toko, Mitra Perpus, Mitra Komunitas, dan Warga).
 - **Registrasi Warga Pembaca (`/register`)**: Pendaftaran akun masyarakat dengan pemilihan nama lengkap, email, kata sandi, dan kecamatan asal di Sidrap.
-- **Registrasi Mitra Mandiri (`/register-mitra`)**: Formulir pendaftaran calon mitra penyedia literasi dengan pemilihan jenis mitra (`TOKO_BUKU`, `PERPUSTAKAAN`, `KOMUNITAS`, `SEKOLAH`, `PENGAJAR`), nama organisasi, alamat lengkap, kecamatan, dan nomor kontak WhatsApp. Pendaftaran otomatis masuk ke status `PENDING` menunggu persetujuan admin.
+- **Registrasi Mitra Mandiri (`/register-mitra`)**: Formulir pendaftaran calon mitra penyedia literasi dengan pemilihan jenis mitra (`TOKO_BUKU`, `PERPUSTAKAAN`, `KOMUNITAS`), nama organisasi, alamat lengkap, kecamatan, dan nomor kontak WhatsApp. Pendaftaran otomatis masuk ke status `PENDING` menunggu persetujuan admin.
 - **Portal Khusus Login Admin (`/admin/login`)**: Antarmuka masuk eksklusif dengan tema gelap (*dark theme*) untuk staf dan pengelola platform MABBACA.
 - **Profil Pengguna (`/profile`)**: Halaman untuk memperbarui data diri, mengubah nama, mengganti foto profil (avatar), mengubah kecamatan tempat tinggal, dan memperbarui kata sandi akun secara aman.
 
@@ -548,7 +545,7 @@ mabbaca/
 │   │   ├── pages/                      # Seluruh Halaman Antarmuka
 │   │   │   ├── admin/                  # AdminDashboardPage & AdminLoginPage
 │   │   │   ├── auth/                   # LoginPage, RegisterPage, RegisterMitraPage
-│   │   │   ├── mitra/                  # MitraDashboardPage (Toko Buku, Perpus, Komunitas, Sekolah)
+│   │   │   ├── mitra/                  # MitraDashboardPage (Toko Buku, Perpus, Komunitas)
 │   │   │   ├── public/                 # HomePage, BooksPage, BookDetailPage, StoresPage, StoreDetailPage,
 │   │   │   │                           # LibrariesPage, LibraryDetailPage, CommunitiesPage, CommunityDetailPage,
 │   │   │   │                           # EventsPage, EventDetailPage, ArticlesPage, ArticleDetailPage,

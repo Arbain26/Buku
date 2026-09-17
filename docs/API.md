@@ -120,7 +120,6 @@ Backend MABBACA dibangun di atas prinsip arsitektur modular **Express + Service 
 | **`MITRA`** | `TOKO_BUKU` | Mengelola etalase toko, menginput stok dan harga buku, menerima dan mengupdate status pesanan. |
 | **`MITRA`** | `PERPUSTAKAAN` | Mengelola katalog koleksi fisik, verifikasi peminjaman (approve/reject/return) dengan auto update stok fisik. |
 | **`MITRA`** | `KOMUNITAS` | Mengelola profil komunitas, mempublikasikan agenda kegiatan literasi (event), mengelola anggota. |
-| **`MITRA`** | `SEKOLAH` / `PENGAJAR` | Mempublikasikan program literasi pendidikan, artikel, dan materi pembelajaran. |
 | **`ADMIN`** | - | Akses penuh dashboard sistem, verifikasi mitra pendaftar (`PENDING` -> `APPROVED`/`REJECTED`), manajemen user, statistik literasi per kecamatan Sidrap. |
 
 > **Catatan Persetujuan Mitra**: Mitra yang baru mendaftar memiliki status `PENDING`. Mitra `PENDING` tidak dapat mempublikasikan barang/koleksi hingga diverifikasi oleh Admin.

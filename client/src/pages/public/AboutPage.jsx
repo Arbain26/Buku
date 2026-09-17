@@ -6,7 +6,6 @@ import {
   Landmark,
   Store,
   Users,
-  GraduationCap,
   Sparkles,
   MapPin,
   CheckCircle2,
@@ -34,12 +33,6 @@ export const AboutPage = () => {
       desc: 'Mewadahi paguyuban pemuda dan pegiat literasi untuk mengadakan diskusi, lapak baca gratis, dan gerakan sosial edukatif.',
       icon: Users,
       color: 'bg-sky-50 text-sky-800 border-sky-200',
-    },
-    {
-      title: 'Sekolah & Institusi',
-      desc: 'Menghubungkan program gerakan literasi sekolah dengan perpustakaan dan agenda kegiatan edukasi di tingkat kabupaten.',
-      icon: GraduationCap,
-      color: 'bg-amber-50 text-amber-800 border-amber-200',
     },
   ];
 
@@ -98,7 +91,7 @@ export const AboutPage = () => {
         </div>
       </section>
 
-      {/* Ekosistem 4 Pilar */}
+      {/* Ekosistem 3 Pilar */}
       <section className="space-y-6">
         <div className="text-center max-w-xl mx-auto space-y-1">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#17211D]">
@@ -109,7 +102,7 @@ export const AboutPage = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {ecosystemPillars.map((p) => {
             const Icon = p.icon;
             return (

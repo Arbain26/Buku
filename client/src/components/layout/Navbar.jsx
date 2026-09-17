@@ -588,7 +588,7 @@ export const Navbar = () => {
                     <Store className="w-4 h-4" />
                     <div>
                       <p className="text-xs font-bold">Gabung Mitra Sidrap</p>
-                      <p className="text-[10px] text-emerald-700">Daftarkan Toko, Komunitas & Sekolah</p>
+                      <p className="text-[10px] text-emerald-700">Daftarkan Toko Buku, Perpus & Komunitas</p>
                     </div>
                   </div>
                   <ArrowRight className="w-4 h-4" />

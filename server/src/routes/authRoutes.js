@@ -39,7 +39,7 @@ const registerMitraValidation = [
       throw new Error('Format nomor WhatsApp tidak valid (contoh: 08123456789 atau 628123456789).');
     }),
   body('mitraType')
-    .isIn(['TOKO_BUKU', 'PERPUSTAKAAN', 'KOMUNITAS', 'SEKOLAH', 'PENGAJAR'])
+    .isIn(['TOKO_BUKU', 'PERPUSTAKAAN', 'KOMUNITAS'])
     .withMessage('Jenis mitra tidak valid.'),
   body('organizationName').trim().notEmpty().withMessage('Nama organisasi / institusi wajib diisi.'),
 ];
