@@ -1,5 +1,6 @@
+const prisma = require('../config/db');
 const eventService = require('../services/event.service');
-const { successResponse, paginateResponse } = require('../utils/responseHelper');
+const { successResponse, paginateResponse, errorResponse } = require('../utils/responseHelper');
 
 const getEvents = async (req, res, next) => {
   try {
@@ -23,8 +24,21 @@ const getEventById = async (req, res, next) => {
 
 const createEvent = async (req, res, next) => {
   try {
-    const mitraId = req.user.mitraProfile.id;
-    const event = await eventService.createEvent(mitraId, req.body, req.file);
+    let mitraProfile = req.user.mitraProfile;
+    if (!mitraProfile && req.user?.id) {
+      mitraProfile = await prisma.mitraProfile.findFirst({
+        where: { userId: req.user.id, deletedAt: null },
+      });
+    }
+    if (!mitraProfile && req.user?.role === 'ADMIN') {
+      mitraProfile = await prisma.mitraProfile.findFirst({
+        where: { status: 'APPROVED', deletedAt: null },
+      });
+    }
+    if (!mitraProfile) {
+      return errorResponse(res, 'Profil mitra tidak ditemukan untuk menyelenggarakan kegiatan.', 403);
+    }
+    const event = await eventService.createEvent(mitraProfile.id, req.body, req.file);
     return successResponse(res, 'Event literasi berhasil dibuat.', event, 201);
   } catch (error) {
     next(error);

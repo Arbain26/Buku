@@ -172,7 +172,7 @@ class EventService {
   }
 
   async createEvent(mitraId, data, file) {
-    const slug = data.title
+    const slug = (data.title || 'event')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
@@ -180,23 +180,46 @@ class EventService {
 
     const image = file ? `/uploads/${file.filename}` : data.image || null;
 
+    const validCategories = ['BEDAH_BUKU', 'DISKUSI', 'LAPAK_BACA', 'KELAS_MENULIS', 'PELATIHAN', 'PAMERAN', 'FESTIVAL_LITERASI'];
+    let category = data.category || 'DISKUSI';
+    if (!validCategories.includes(category)) {
+      if (category === 'WORKSHOP') category = 'PELATIHAN';
+      else if (category === 'FESTIVAL') category = 'FESTIVAL_LITERASI';
+      else if (category === 'WEBINAR') category = 'DISKUSI';
+      else category = 'BEDAH_BUKU';
+    }
+
+    const validAudiences = ['ANAK', 'REMAJA', 'DEWASA', 'UMUM'];
+    let audience = data.audience || 'UMUM';
+    if (!validAudiences.includes(audience)) {
+      if (audience === 'PELAJAR') audience = 'REMAJA';
+      else if (audience === 'MAHASISWA') audience = 'DEWASA';
+      else if (audience === 'ANAK_ANAK') audience = 'ANAK';
+      else audience = 'UMUM';
+    }
+
+    let parsedEventDate = new Date(data.eventDate);
+    if (isNaN(parsedEventDate.getTime())) {
+      parsedEventDate = new Date();
+    }
+
     return prisma.event.create({
       data: {
-        organizerMitraId: mitraId,
+        organizerMitraId: parseInt(mitraId),
         title: data.title,
         slug: uniqueSlug,
         description: data.description,
         image,
-        category: data.category || 'DISKUSI',
-        audience: data.audience || 'UMUM',
-        location: data.location || data.locationName,
+        category,
+        audience,
+        location: data.location || data.locationName || 'Sidrap',
         address: data.address || null,
         district: data.district || null,
         latitude: data.latitude ? parseFloat(data.latitude) : null,
         longitude: data.longitude ? parseFloat(data.longitude) : null,
-        eventDate: new Date(data.eventDate),
-        startTime: data.startTime,
-        endTime: data.endTime,
+        eventDate: parsedEventDate,
+        startTime: data.startTime || '09:00',
+        endTime: data.endTime || '12:00',
         capacity: data.capacity ? parseInt(data.capacity) : 50,
         registrationDeadline: data.registrationDeadline ? new Date(data.registrationDeadline) : null,
         isFree: data.isFree === 'false' || data.isFree === false ? false : true,
@@ -210,14 +233,37 @@ class EventService {
     const updateData = {};
     if (data.title) updateData.title = data.title;
     if (data.description) updateData.description = data.description;
-    if (data.category) updateData.category = data.category;
-    if (data.audience) updateData.audience = data.audience;
+    if (data.category) {
+      const validCategories = ['BEDAH_BUKU', 'DISKUSI', 'LAPAK_BACA', 'KELAS_MENULIS', 'PELATIHAN', 'PAMERAN', 'FESTIVAL_LITERASI'];
+      let category = data.category;
+      if (!validCategories.includes(category)) {
+        if (category === 'WORKSHOP') category = 'PELATIHAN';
+        else if (category === 'FESTIVAL') category = 'FESTIVAL_LITERASI';
+        else if (category === 'WEBINAR') category = 'DISKUSI';
+        else category = 'BEDAH_BUKU';
+      }
+      updateData.category = category;
+    }
+    if (data.audience) {
+      const validAudiences = ['ANAK', 'REMAJA', 'DEWASA', 'UMUM'];
+      let audience = data.audience;
+      if (!validAudiences.includes(audience)) {
+        if (audience === 'PELAJAR') audience = 'REMAJA';
+        else if (audience === 'MAHASISWA') audience = 'DEWASA';
+        else if (audience === 'ANAK_ANAK') audience = 'ANAK';
+        else audience = 'UMUM';
+      }
+      updateData.audience = audience;
+    }
     if (data.location || data.locationName) updateData.location = data.location || data.locationName;
     if (data.address !== undefined) updateData.address = data.address;
     if (data.district !== undefined) updateData.district = data.district;
     if (data.latitude) updateData.latitude = parseFloat(data.latitude);
     if (data.longitude) updateData.longitude = parseFloat(data.longitude);
-    if (data.eventDate) updateData.eventDate = new Date(data.eventDate);
+    if (data.eventDate) {
+      const d = new Date(data.eventDate);
+      if (!isNaN(d.getTime())) updateData.eventDate = d;
+    }
     if (data.startTime) updateData.startTime = data.startTime;
     if (data.endTime) updateData.endTime = data.endTime;
     if (data.capacity) updateData.capacity = parseInt(data.capacity);
