@@ -46,8 +46,15 @@ router.post(
   '/borrow',
   authenticate,
   [
-    body('libraryId').isInt().withMessage('ID Perpustakaan wajib ditentukan.'),
-    body('bookId').isInt().withMessage('ID Buku wajib ditentukan.'),
+    body('libraryId').optional().isInt().withMessage('ID Perpustakaan harus berupa angka.'),
+    body('bookId').optional().isInt().withMessage('ID Buku harus berupa angka.'),
+    body('collectionId').optional().isInt().withMessage('ID Koleksi harus berupa angka.'),
+    body().custom((val) => {
+      if (!val.collectionId && (!val.libraryId || !val.bookId)) {
+        throw new Error('ID Perpustakaan dan ID Buku, atau ID Koleksi wajib ditentukan.');
+      }
+      return true;
+    }),
   ],
   validate,
   libraryController.requestBorrow

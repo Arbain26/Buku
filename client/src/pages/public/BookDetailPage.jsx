@@ -179,10 +179,12 @@ export const BookDetailPage = () => {
     try {
       setIsSubmittingBorrow(true);
       const res = await libraryService.requestBorrow({
-        collectionId: selectedCollection.libraryCollectionId,
+        libraryId: selectedCollection.libraryId,
+        bookId: book.id,
+        collectionId: selectedCollection.collectionId || selectedCollection.libraryCollectionId || selectedCollection.id,
         notes: borrowNotes,
       });
-      showToast(res.message, 'success');
+      showToast(res.message || 'Pengajuan peminjaman berhasil dikirim!', 'success');
       setIsBorrowModalOpen(false);
       setBorrowNotes('');
     } catch (err) {

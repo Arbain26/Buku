@@ -83,10 +83,12 @@ export const LibraryDetailPage = () => {
     try {
       setIsSubmitting(true);
       const res = await libraryService.requestBorrow({
+        libraryId: library.id,
+        bookId: activeCollection.bookId,
         collectionId: activeCollection.collectionId,
         notes: borrowNotes,
       });
-      showToast(res.message, 'success');
+      showToast(res.message || 'Pengajuan peminjaman berhasil dikirim!', 'success');
       setIsBorrowModalOpen(false);
       setBorrowNotes('');
       // Refresh library details

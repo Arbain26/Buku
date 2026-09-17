@@ -80,21 +80,36 @@ class BorrowingService {
   }
 
   // Request borrow (User)
-  async requestBorrow(userId, { libraryId, bookId, quantity = 1, notes, durationDays = 7 }) {
-    const libId = parseInt(libraryId);
-    const bId = parseInt(bookId);
+  async requestBorrow(userId, { libraryId, bookId, collectionId, quantity = 1, notes, durationDays = 7 }) {
+    let libId = libraryId ? parseInt(libraryId) : null;
+    let bId = bookId ? parseInt(bookId) : null;
     const qty = Math.max(1, parseInt(quantity));
 
     return prisma.$transaction(async (tx) => {
-      // Cari koleksi buku di perpustakaan terkait
-      const collection = await tx.libraryCollection.findUnique({
-        where: {
-          libraryId_bookId: {
-            libraryId: libId,
-            bookId: bId,
+      let collection = null;
+
+      // Cari berdasarkan collectionId jika ada
+      if (collectionId) {
+        collection = await tx.libraryCollection.findUnique({
+          where: { id: parseInt(collectionId) },
+        });
+        if (collection) {
+          libId = collection.libraryId;
+          bId = collection.bookId;
+        }
+      }
+
+      // Cari berdasarkan pasangan libraryId & bookId jika belum ditemukan
+      if (!collection && libId && bId) {
+        collection = await tx.libraryCollection.findUnique({
+          where: {
+            libraryId_bookId: {
+              libraryId: libId,
+              bookId: bId,
+            },
           },
-        },
-      });
+        });
+      }
 
       if (!collection) {
         const error = new Error('Buku ini tidak terdaftar dalam koleksi perpustakaan tersebut.');

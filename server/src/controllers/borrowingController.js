@@ -22,13 +22,11 @@ const getBorrowingById = async (req, res, next) => {
 
 const createBorrowing = async (req, res, next) => {
   try {
-    const { libraryId, bookId, quantity, notes, durationDays } = req.body;
-    if (!libraryId || !bookId) {
-      return errorResponse(res, 'ID Perpustakaan dan ID Buku wajib diisi.', 400);
-    }
+    const { libraryId, bookId, collectionId, quantity, notes, durationDays } = req.body;
     const borrowing = await borrowingService.requestBorrow(req.user.id, {
       libraryId,
       bookId,
+      collectionId,
       quantity,
       notes,
       durationDays,
