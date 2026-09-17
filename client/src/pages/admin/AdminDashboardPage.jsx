@@ -96,6 +96,8 @@ const BORROW_STATUS_OPTIONS = [
   { value: 'OVERDUE', label: 'Terlambat / Jatuh Tempo' },
 ];
 
+const formatRupiah = (num) => 'Rp ' + Number(num || 0).toLocaleString('id-ID');
+
 export const AdminDashboardPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get('tab') || 'overview'; // overview, verifikasi, literasi-stats, users, books, orders, borrowings
