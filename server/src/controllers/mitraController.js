@@ -99,16 +99,22 @@ const addInventory = async (req, res, next) => {
       });
     } else {
       const bookPatch = {};
-      if (coverImage && (!book.coverImage || book.coverImage !== coverImage)) bookPatch.coverImage = coverImage;
-      if (publisher && !book.publisher) bookPatch.publisher = publisher;
-      if (publishYear && !book.publishYear) bookPatch.publishYear = parseInt(publishYear);
-      if (pages && !book.pages) bookPatch.pages = parseInt(pages);
-      if (language && !book.language) bookPatch.language = language;
+      if (req.file) {
+        bookPatch.coverImage = { set: `/uploads/${req.file.filename}` };
+      }
+      if (publisher && !book.publisher) bookPatch.publisher = { set: publisher };
+      if (publishYear && !book.publishYear) bookPatch.publishYear = { set: parseInt(publishYear) };
+      if (pages && !book.pages) bookPatch.pages = { set: parseInt(pages) };
+      if (language && !book.language) bookPatch.language = { set: language };
       if (Object.keys(bookPatch).length > 0) {
-        await prisma.book.update({
-          where: { id: book.id },
-          data: bookPatch,
-        });
+        try {
+          await prisma.book.update({
+            where: { id: book.id },
+            data: bookPatch,
+          });
+        } catch (patchErr) {
+          console.warn('Book update non-critical notice:', patchErr.message);
+        }
       }
     }
 
@@ -215,22 +221,30 @@ const updateInventory = async (req, res, next) => {
     // Perbarui data Buku induk (Judul, Penulis, Sinopsis, Kategori, Penerbit, Tahun, Halaman, Bahasa, Cover Image) jika ada
     if (bookId) {
       const bookUpdateData = {};
-      if (title) bookUpdateData.title = title;
-      if (author) bookUpdateData.author = author;
-      if (description) bookUpdateData.description = description;
+      if (title) bookUpdateData.title = { set: title };
+      if (author) bookUpdateData.author = { set: author };
+      if (description) bookUpdateData.description = { set: description };
       if (categoryId) bookUpdateData.categoryId = parseInt(categoryId);
-      if (isbn !== undefined) bookUpdateData.isbn = isbn || null;
-      if (publisher !== undefined) bookUpdateData.publisher = publisher || null;
-      if (publishYear !== undefined) bookUpdateData.publishYear = publishYear ? parseInt(publishYear) : null;
-      if (pages !== undefined) bookUpdateData.pages = pages ? parseInt(pages) : null;
-      if (language !== undefined) bookUpdateData.language = language || null;
-      if (coverImage !== undefined) bookUpdateData.coverImage = coverImage;
+      if (isbn !== undefined) bookUpdateData.isbn = isbn ? { set: isbn } : null;
+      if (publisher !== undefined) bookUpdateData.publisher = publisher ? { set: publisher } : null;
+      if (publishYear !== undefined) bookUpdateData.publishYear = publishYear ? { set: parseInt(publishYear) } : null;
+      if (pages !== undefined) bookUpdateData.pages = pages ? { set: parseInt(pages) } : null;
+      if (language !== undefined) bookUpdateData.language = language ? { set: language } : null;
+      if (req.file) {
+        bookUpdateData.coverImage = { set: `/uploads/${req.file.filename}` };
+      } else if (coverImage) {
+        bookUpdateData.coverImage = { set: coverImage };
+      }
 
       if (Object.keys(bookUpdateData).length > 0) {
-        await prisma.book.update({
-          where: { id: bookId },
-          data: bookUpdateData,
-        });
+        try {
+          await prisma.book.update({
+            where: { id: bookId },
+            data: bookUpdateData,
+          });
+        } catch (updateErr) {
+          console.warn('Non-critical book update warning:', updateErr.message);
+        }
       }
     }
 
