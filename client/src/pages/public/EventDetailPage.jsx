@@ -113,7 +113,7 @@ export const EventDetailPage = () => {
       {/* Banner */}
       <div className="relative aspect-[16/9] w-full rounded-3xl overflow-hidden bg-[#E8F3EF] shadow-xs border border-[#E2E8E5]">
         <ImageWithFallback
-          src={event.banner}
+          src={event.image || event.banner}
           alt={event.title}
           fallbackIcon={Calendar}
           fallbackText={event.title}
