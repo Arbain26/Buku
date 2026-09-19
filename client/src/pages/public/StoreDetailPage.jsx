@@ -120,7 +120,12 @@ export const StoreDetailPage = () => {
     }
 
     if (createdOrderResult.whatsappUrl) {
-      window.open(createdOrderResult.whatsappUrl, '_blank');
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      let finalUrl = createdOrderResult.whatsappUrl;
+      if (!isMobile) {
+        finalUrl = finalUrl.replace('https://api.whatsapp.com/send', 'https://web.whatsapp.com/send');
+      }
+      window.open(finalUrl, '_blank');
     }
   };
 

@@ -450,9 +450,16 @@ export const UserDashboardPage = () => {
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
-                      onClick={() => {
-                        if (ord.whatsappUrl) window.open(ord.whatsappUrl, '_blank');
-                      }}
+                        onClick={() => {
+                          if (ord.whatsappUrl) {
+                            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                            let finalUrl = ord.whatsappUrl;
+                            if (!isMobile) {
+                              finalUrl = finalUrl.replace('https://api.whatsapp.com/send', 'https://web.whatsapp.com/send');
+                            }
+                            window.open(finalUrl, '_blank');
+                          }
+                        }}
                       className="bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-bold gap-1.5 shadow-xs"
                     >
                       <MessageCircle className="w-3.5 h-3.5" /> Lanjut ke WhatsApp
