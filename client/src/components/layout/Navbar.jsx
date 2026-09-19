@@ -263,23 +263,27 @@ export const Navbar = () => {
 
                       {/* Links */}
                       <div className="py-1">
-                        <Link
-                          to="/dashboard"
-                          onClick={() => setIsProfileOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-[#E8F3EF] hover:text-[#075E54]"
-                        >
-                          <LayoutDashboard className="w-4 h-4 text-[#075E54]" />
-                          Dashboard Pengguna
-                        </Link>
+                        {!isAdmin && !isMitra && (
+                          <>
+                            <Link
+                              to="/dashboard"
+                              onClick={() => setIsProfileOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-[#E8F3EF] hover:text-[#075E54]"
+                            >
+                              <LayoutDashboard className="w-4 h-4 text-[#075E54]" />
+                              Dashboard Pengguna
+                            </Link>
 
-                        <Link
-                          to="/dashboard?tab=misi"
-                          onClick={() => setIsProfileOpen(false)}
-                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-[#E8F3EF] hover:text-[#075E54]"
-                        >
-                          <Sparkles className="w-4 h-4 text-[#075E54]" />
-                          Misi Literasi
-                        </Link>
+                            <Link
+                              to="/dashboard?tab=misi"
+                              onClick={() => setIsProfileOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-[#E8F3EF] hover:text-[#075E54]"
+                            >
+                              <Sparkles className="w-4 h-4 text-[#075E54]" />
+                              Misi Literasi
+                            </Link>
+                          </>
+                        )}
 
                         {isMitra && (
                           <Link
@@ -419,7 +423,7 @@ export const Navbar = () => {
                     </div>
                   </div>
                   <Link
-                    to="/dashboard"
+                    to={isAdmin ? '/admin/dashboard' : isMitra ? '/mitra/dashboard' : '/dashboard'}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="flex items-center justify-center gap-1.5 w-full py-1.5 bg-white text-[#075E54] text-xs font-bold rounded-xl shadow-2xs hover:bg-emerald-50 transition-colors"
                   >
