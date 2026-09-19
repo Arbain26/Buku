@@ -44,7 +44,7 @@ export const SearchBar = ({
         onChange={(e) => onChange && onChange(e.target.value)}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        className={`w-full bg-white border border-[#E2E8E5] rounded-2xl text-[#17211D] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#075E54] focus:border-transparent transition-all shadow-xs ${sizeClasses[size]}`}
+        className={`w-full bg-white border border-[#E2E8E5] rounded-2xl text-black placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-[#075E54] focus:border-transparent transition-all shadow-xs ${sizeClasses[size]}`}
         {...props}
       />
       {value && (

@@ -98,6 +98,7 @@ export const LoginPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="off"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] text-[#17211D] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               />
             </div>
@@ -116,6 +117,7 @@ export const LoginPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="new-password"
                 className="w-full pl-10 pr-10 py-2.5 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] text-[#17211D] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
               />
               <button

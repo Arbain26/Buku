@@ -188,7 +188,7 @@ export const Navbar = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Cari buku, toko, event, komunitas..."
-                  className="w-full pl-10 pr-4 py-2 rounded-full text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] text-[#17211D] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#075E54] focus:bg-white transition-all shadow-xs"
+                  className="w-full pl-10 pr-4 py-2 rounded-full text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] text-black placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-[#075E54] focus:bg-white transition-all shadow-xs"
                 />
               </div>
             </form>
@@ -359,7 +359,7 @@ export const Navbar = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Cari buku, toko, perpustakaan, event..."
                     autoFocus
-                    className="w-full pl-10 pr-4 py-2.5 rounded-2xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] text-[#17211D] focus:outline-none focus:ring-2 focus:ring-[#075E54] focus:bg-white shadow-xs"
+                    className="w-full pl-10 pr-4 py-2 rounded-full text-sm bg-gray-50 border border-gray-200 text-black placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-[#075E54] focus:bg-white shadow-inner"
                   />
                 </div>
                 <button
@@ -459,7 +459,7 @@ export const Navbar = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Cari buku, event, toko..."
-                  className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-gray-50 border border-gray-200 text-[#17211D] focus:outline-none focus:ring-2 focus:ring-[#075E54] focus:bg-white"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-gray-50 border border-gray-200 text-black placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-[#075E54] focus:bg-white"
                 />
               </form>
 

@@ -104,8 +104,11 @@ class OrderService {
 
       const waMessage = `Halo ${store.name},\nSaya ingin memesan buku via platform MABBACA:\n\n*Nomor Order:* ${order.orderNumber}\n*Nama Pemesan:* ${customerName}\n*No. HP:* ${customerPhone}\n*Alamat:* ${customerAddress || '-'}\n\n*Daftar Buku:*\n${itemLines}\n\n*Total Pembayaran:* Rp ${calculatedTotal.toLocaleString('id-ID')}\n*Catatan:* ${notes || '-'}\n\nMohon konfirmasi ketersediaan dan petunjuk pembayarannya. Terima kasih!`;
 
-      const cleanWaPhone = store.whatsappNumber.replace(/[^0-9]/g, '');
-      const waLink = `https://wa.me/${cleanWaPhone}?text=${encodeURIComponent(waMessage)}`;
+      let cleanWaPhone = store.whatsappNumber.replace(/[^0-9]/g, '');
+      if (cleanWaPhone.startsWith('0')) {
+        cleanWaPhone = '62' + cleanWaPhone.substring(1);
+      }
+      const waLink = `https://api.whatsapp.com/send?phone=${cleanWaPhone}&text=${encodeURIComponent(waMessage)}`;
 
       // Catat notifikasi ke user jika login
       if (userId) {
@@ -315,8 +318,11 @@ class OrderService {
 
     const waMessage = `Halo ${order.store.name},\nSaya ingin menindaklanjuti pesanan buku via MABBACA:\n\n*Nomor Order:* ${order.orderNumber}\n*Nama Pemesan:* ${order.customerName}\n*No. HP:* ${order.customerPhone}\n\n*Daftar Buku:*\n${itemLines}\n\n*Total:* Rp ${Number(order.totalAmount).toLocaleString('id-ID')}`;
 
-    const cleanWaPhone = order.store.whatsappNumber.replace(/[^0-9]/g, '');
-    const waLink = `https://wa.me/${cleanWaPhone}?text=${encodeURIComponent(waMessage)}`;
+    let cleanWaPhone = order.store.whatsappNumber.replace(/[^0-9]/g, '');
+    if (cleanWaPhone.startsWith('0')) {
+      cleanWaPhone = '62' + cleanWaPhone.substring(1);
+    }
+    const waLink = `https://api.whatsapp.com/send?phone=${cleanWaPhone}&text=${encodeURIComponent(waMessage)}`;
 
     return {
       orderNumber: order.orderNumber,

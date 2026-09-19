@@ -160,7 +160,7 @@ export const HomePage = () => {
                   value={heroSearch}
                   onChange={(e) => setHeroSearch(e.target.value)}
                   placeholder="Cari buku, toko, event..."
-                  className="flex-1 min-w-0 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-[#17211D] placeholder-gray-400 focus:outline-none bg-transparent"
+                  className="flex-1 min-w-0 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-black placeholder-gray-700 focus:outline-none bg-transparent"
                 />
                 <Button
                   type="submit"

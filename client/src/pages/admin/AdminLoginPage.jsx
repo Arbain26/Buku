@@ -133,6 +133,7 @@ export const AdminLoginPage = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="off"
                   className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs bg-[#111A16] border border-emerald-900/80 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
@@ -149,7 +150,8 @@ export const AdminLoginPage = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs bg-[#111A16] border border-emerald-900/80 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  autoComplete="new-password"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl text-xs bg-[#111A16] border border-emerald-900/80 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                 />
               </div>
             </div>

@@ -175,6 +175,8 @@ export const MitraDashboardPage = () => {
     phoneWa: '',
     openHours: '08.00 - 17.00 WITA',
   });
+  const [profileLogoFile, setProfileLogoFile] = useState(null);
+  const [profileBannerFile, setProfileBannerFile] = useState(null);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   const districtsList = [
@@ -229,8 +231,17 @@ export const MitraDashboardPage = () => {
     }
     try {
       setIsUpdatingProfile(true);
-      const res = await mitraService.updateProfile(profileForm);
+      const formData = new FormData();
+      Object.keys(profileForm).forEach((key) => {
+        formData.append(key, profileForm[key]);
+      });
+      if (profileLogoFile) formData.append('logo', profileLogoFile);
+      if (profileBannerFile) formData.append('banner', profileBannerFile);
+
+      const res = await mitraService.updateProfile(formData);
       showToast(res?.message || 'Profil berhasil diperbarui!', 'success');
+      setProfileLogoFile(null);
+      setProfileBannerFile(null);
       await fetchDashboard();
     } catch (err) {
       showToast(err.response?.data?.message || 'Gagal memperbarui profil.', 'error');
@@ -824,7 +835,7 @@ export const MitraDashboardPage = () => {
               </p>
             </div>
             <a
-              href={`https://wa.me/6285255667788?text=${encodeURIComponent(
+              href={`https://wa.me/6283131930949?text=${encodeURIComponent(
                 `Halo Admin MABBACA, saya ingin menanyakan progres verifikasi akun mitra saya: ${profile?.organizationName || user?.name} (${user?.email}). Terima kasih!`
               )}`}
               target="_blank"
@@ -872,7 +883,7 @@ export const MitraDashboardPage = () => {
 
           <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
             <a
-              href="https://wa.me/6285255667788"
+              href="https://wa.me/6283131930949"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-2.5 rounded-xl bg-[#075E54] text-white text-xs font-bold hover:bg-[#05473F] transition-colors inline-flex items-center justify-center gap-2"
@@ -1279,7 +1290,7 @@ export const MitraDashboardPage = () => {
                     />
                     <Area
                       type="monotone"
-                      dataKey="pesanan"
+                      dataKey={mitraType === 'TOKO_BUKU' ? 'pesanan' : 'peminjaman'}
                       stroke="#F59E0B"
                       strokeWidth={2.5}
                       fillOpacity={1}
@@ -2088,6 +2099,37 @@ export const MitraDashboardPage = () => {
                   placeholder={`Ceritakan tentang koleksi buku, layanan baca, atau spesialisasi ${roleTitle} Anda...`}
                   className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#075E54]"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1.5">
+                    Logo Toko/Komunitas (Opsional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setProfileLogoFile(e.target.files[0])}
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#075E54] bg-white"
+                  />
+                  <span className="text-[11px] text-gray-400 mt-1 block">
+                    Format: JPG, PNG. Maksimal 5MB.
+                  </span>
+                </div>
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1.5">
+                    Banner / Foto Sampul (Opsional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setProfileBannerFile(e.target.files[0])}
+                    className="w-full p-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#075E54] bg-white"
+                  />
+                  <span className="text-[11px] text-gray-400 mt-1 block">
+                    Tampil di bagian atas profil toko Anda.
+                  </span>
+                </div>
               </div>
 
               {/* PIC Info Readonly */}

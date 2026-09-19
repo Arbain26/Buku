@@ -31,23 +31,69 @@ class AdminService {
       prisma.eventParticipant.count(),
     ]);
 
-    // Data grafik pertumbuhan riil dihitung berdasarkan akumulasi bulan
-    // Menggunakan rentang 5 bulan terakhir berdasarkan data yang ada
-    const months = ['Mei', 'Jun', 'Jul', 'Agt', 'Sep'];
-    const growthData = months.map((monthName, idx) => ({
-      month: monthName,
-      pengguna: Math.max(10, Math.round((totalUsers / 5) * (idx + 1))),
-      event: Math.max(2, Math.round((totalEvents / 5) * (idx + 1))),
-      peminjaman: Math.max(5, Math.round((totalBorrowings / 5) * (idx + 1))),
-      pemesanan: Math.max(3, Math.round((totalOrders / 5) * (idx + 1))),
-    }));
+    // === 1. Dynamic District Stats (Real Data) ===
+    const sidrapDistricts = [
+      'Pangkajene', 'Maritengngae', 'Baranti', 'Watang Pulu', 
+      'Dua Pitue', 'Panca Rijang', 'Kulo', 'Tellu Limpoe', 
+      'Pitu Riase', 'Watang Sidenreng', 'Pitu Riawa'
+    ];
+    
+    // Fetch raw data with district info
+    const [libData, storeData, comData, evtData] = await Promise.all([
+      prisma.library.findMany({ where: { isActive: true, deletedAt: null }, select: { district: true } }),
+      prisma.store.findMany({ where: { isActive: true, deletedAt: null }, select: { district: true } }),
+      prisma.community.findMany({ where: { isActive: true, deletedAt: null }, select: { district: true } }),
+      prisma.event.findMany({ where: { status: { not: 'CANCELLED' } }, select: { location: true } }),
+    ]);
 
-    // Data sebaran literasi per kecamatan di Sidrap
-    const districtStats = await prisma.user.groupBy({
-      by: ['district'],
-      _count: { id: true },
-      where: { district: { not: null } },
-    });
+    const formattedDistrictStats = sidrapDistricts.map(districtName => {
+      const p = libData.filter(l => l.district?.includes(districtName)).length;
+      const t = storeData.filter(s => s.district?.includes(districtName)).length;
+      const c = comData.filter(com => com.district?.includes(districtName)).length;
+      const e = evtData.filter(ev => ev.location?.includes(districtName)).length;
+      return {
+        district: districtName,
+        perpustakaan: p,
+        tokoBuku: t,
+        komunitas: c,
+        event: e,
+        totalLiterasi: p + t + c + e
+      };
+    }).filter(d => d.totalLiterasi > 0 || sidrapDistricts.slice(0,8).includes(d.district));
+
+    // === 2. Dynamic Growth Data (Last 5 Months) ===
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+    const now = new Date();
+    const growthData = [];
+    
+    // Fetch records for the last 5 months
+    const fiveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 4, 1);
+    
+    const [userGrowth, eventGrowth, borrowGrowth, orderGrowth] = await Promise.all([
+      prisma.user.findMany({ where: { createdAt: { gte: fiveMonthsAgo } }, select: { createdAt: true } }),
+      prisma.eventParticipant.findMany({ where: { createdAt: { gte: fiveMonthsAgo } }, select: { createdAt: true } }),
+      prisma.borrowing.findMany({ where: { createdAt: { gte: fiveMonthsAgo } }, select: { createdAt: true } }),
+      prisma.order.findMany({ where: { createdAt: { gte: fiveMonthsAgo } }, select: { createdAt: true } }),
+    ]);
+
+    for (let i = 4; i >= 0; i--) {
+      const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const targetMonth = targetDate.getMonth();
+      const targetYear = targetDate.getFullYear();
+      
+      const filterByMonth = (items) => items.filter(item => 
+        new Date(item.createdAt).getMonth() === targetMonth && 
+        new Date(item.createdAt).getFullYear() === targetYear
+      ).length;
+
+      growthData.push({
+        month: monthNames[targetMonth],
+        pengguna: filterByMonth(userGrowth),
+        event: filterByMonth(eventGrowth),
+        peminjaman: filterByMonth(borrowGrowth),
+        pemesanan: filterByMonth(orderGrowth),
+      });
+    }
 
     return {
       counts: {
@@ -65,10 +111,7 @@ class AdminService {
         totalEventParticipants,
       },
       growthData,
-      districtStats: districtStats.map((ds) => ({
-        district: ds.district,
-        userCount: ds._count.id,
-      })),
+      districtStats: formattedDistrictStats,
     };
   }
 

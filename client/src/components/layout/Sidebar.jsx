@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   BookOpen,
   LayoutDashboard,
@@ -21,6 +21,7 @@ import { useAuth } from '../../contexts/AuthContext';
 
 export const Sidebar = ({ isMobileOpen, onClose, type = 'mitra' }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
 
   const mitraType = user?.mitraProfile?.mitraType;
@@ -82,6 +83,15 @@ export const Sidebar = ({ isMobileOpen, onClose, type = 'mitra' }) => {
       { name: 'Statistik Literasi', path: '/admin/dashboard?tab=literasi-stats', icon: BarChart3 },
     ]},
   ];
+
+  const handleLogout = () => {
+    logout();
+    if (type === 'admin') {
+      navigate('/admin/login', { replace: true });
+    } else {
+      navigate('/login', { replace: true });
+    }
+  };
 
   return (
     <>
@@ -198,7 +208,7 @@ export const Sidebar = ({ isMobileOpen, onClose, type = 'mitra' }) => {
           </div>
 
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-emerald-100 bg-white/5 hover:bg-red-500/20 hover:text-red-200 transition-colors"
           >
             <LogOut className="w-3.5 h-3.5" />

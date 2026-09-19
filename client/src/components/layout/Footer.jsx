@@ -113,7 +113,7 @@ export const Footer = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>+62 852-1234-5678 (WhatsApp Center)</span>
+                <span>+62 831-3193-0949 (WhatsApp Center)</span>
               </div>
             </div>
           </div>

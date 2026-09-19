@@ -14,6 +14,7 @@ export const EventCard = ({ event }) => {
     endTime = '12:00',
     locationName,
     district,
+    image,
     banner,
     organizer,
     quota = 50,
@@ -39,7 +40,7 @@ export const EventCard = ({ event }) => {
       {/* Banner with ImageWithFallback */}
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#E8F3EF]">
         <ImageWithFallback
-          src={banner}
+          src={image || banner}
           alt={title}
           fallbackIcon={Calendar}
           fallbackText={title}

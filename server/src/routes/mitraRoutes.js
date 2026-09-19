@@ -2,12 +2,12 @@ const express = require('express');
 const mitraController = require('../controllers/mitraController');
 const { authenticate } = require('../middleware/authMiddleware');
 const { requireMitra, requireApprovedMitra } = require('../middleware/roleMiddleware');
-const { uploadSingle } = require('../middleware/uploadMiddleware');
+const { uploadSingle, uploadFields } = require('../middleware/uploadMiddleware');
 
 const router = express.Router();
 
 router.get('/profile', authenticate, requireMitra, mitraController.getMitraProfile);
-router.put('/profile', authenticate, requireMitra, uploadSingle('logo'), mitraController.updateMitraProfile);
+router.put('/profile', authenticate, requireMitra, uploadFields([{ name: 'logo', maxCount: 1 }, { name: 'banner', maxCount: 1 }]), mitraController.updateMitraProfile);
 router.get('/dashboard', authenticate, requireMitra, mitraController.getMitraDashboard);
 router.get('/statistics', authenticate, requireMitra, mitraController.getMitraStatistics);
 

@@ -61,13 +61,13 @@ export const MitraLandingPage = () => {
     <div className="space-y-16 pb-20">
       {/* Hero Header */}
       <section className="bg-gradient-to-b from-emerald-900 via-[#075E54] to-[#0F766E] text-white py-16 sm:py-24">
-        <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/15 text-emerald-100 border border-white/20">
+        <div className="max-w-3xl mx-auto text-center space-y-5">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-semibold text-white shadow-sm backdrop-blur-md">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
             Program Kemitraan MABBACA Sidrap
           </span>
 
-          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-tight text-white">
             Jadilah Bagian dari Ekosistem Literasi Sidrap
           </h1>
 
