@@ -26,7 +26,7 @@ class StoreService {
       ];
     }
 
-    if (district) {
+    if (district && district !== 'Semua') {
       where.district = district;
     }
 

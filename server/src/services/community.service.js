@@ -26,7 +26,7 @@ class CommunityService {
       ];
     }
 
-    if (district) {
+    if (district && district !== 'Semua') {
       where.district = district;
     }
 

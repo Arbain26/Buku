@@ -1,7 +1,7 @@
 const prisma = require('../config/db');
 
 class EventService {
-  async getEvents({ page = 1, limit = 12, search, category, status, upcoming, district }) {
+  async getEvents({ page = 1, limit = 12, search, category, audience, status, upcoming, district }) {
     const p = Math.max(1, parseInt(page));
     const l = Math.max(1, parseInt(limit));
     const skip = (p - 1) * l;
@@ -16,8 +16,12 @@ class EventService {
       ];
     }
 
-    if (category) {
+    if (category && category !== 'Semua') {
       where.category = category;
+    }
+
+    if (audience && audience !== 'Semua') {
+      where.audience = audience;
     }
 
     if (status) {
@@ -30,7 +34,7 @@ class EventService {
       where.eventDate = { gte: new Date() };
     }
 
-    if (district) {
+    if (district && district !== 'Semua') {
       where.district = district;
     }
 

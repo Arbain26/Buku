@@ -4,8 +4,8 @@ const { successResponse, paginateResponse, errorResponse } = require('../utils/r
 
 const getEvents = async (req, res, next) => {
   try {
-    const { page = 1, limit = 12, search, category, status, upcoming, district } = req.query;
-    const result = await eventService.getEvents({ page, limit, search, category, status, upcoming, district });
+    const { page = 1, limit = 12, search, category, audience, status, upcoming, district } = req.query;
+    const result = await eventService.getEvents({ page, limit, search, category, audience, status, upcoming, district });
     return paginateResponse(res, 'Daftar kegiatan literasi berhasil dimuat.', result.events, result.page, result.limit, result.total);
   } catch (error) {
     next(error);

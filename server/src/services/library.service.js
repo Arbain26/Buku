@@ -26,7 +26,7 @@ class LibraryService {
       ];
     }
 
-    if (district) {
+    if (district && district !== 'Semua') {
       where.district = district;
     }
 
