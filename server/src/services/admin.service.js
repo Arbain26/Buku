@@ -443,6 +443,7 @@ class AdminService {
       await tx.user.update({
         where: { id: userId },
         data: {
+          email: `${user.email}_deleted_${Date.now()}`,
           deletedAt: new Date(),
           isActive: false,
         },
