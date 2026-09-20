@@ -114,22 +114,24 @@ class UserService {
     return user;
   }
 
-  // Soft delete user
+  // Hard delete user
   async deleteUser(id) {
-    const user = await prisma.user.findUnique({ where: { id: parseInt(id) } });
+    const userId = parseInt(id);
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       const error = new Error('Pengguna tidak ditemukan.');
       error.statusCode = 404;
       throw error;
     }
 
-    return prisma.user.update({
-      where: { id: parseInt(id) },
-      data: {
-        email: `${user.email}_deleted_${Date.now()}`,
-        deletedAt: new Date(),
-        isActive: false,
-      },
+    // Nullify userId on orders to prevent constraint errors
+    await prisma.order.updateMany({
+      where: { userId: userId },
+      data: { userId: null },
+    });
+
+    return prisma.user.delete({
+      where: { id: userId },
     });
   }
 

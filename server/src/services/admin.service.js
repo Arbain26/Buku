@@ -433,39 +433,24 @@ class AdminService {
         include: { mitraProfile: true },
       });
 
-      if (!user || user.deletedAt) {
+      if (!user) {
         const error = new Error('Pengguna tidak ditemukan atau sudah dihapus.');
         error.statusCode = 404;
         throw error;
       }
 
-      // Soft delete user
-      await tx.user.update({
-        where: { id: userId },
-        data: {
-          email: `${user.email}_deleted_${Date.now()}`,
-          deletedAt: new Date(),
-          isActive: false,
-        },
+      // Nullify userId on orders to prevent constraint errors since onDelete is not configured on schema for this relation
+      await tx.order.updateMany({
+        where: { userId: user.id },
+        data: { userId: null },
       });
 
-      // If user has a mitraProfile, soft delete and deactivate services
-      if (user.mitraProfile) {
-        const mitraId = user.mitraProfile.id;
-        await tx.mitraProfile.update({
-          where: { id: mitraId },
-          data: {
-            deletedAt: new Date(),
-            status: 'SUSPENDED',
-          },
-        });
+      // Hard delete user (this will cascade to MitraProfile, Store, etc. based on schema)
+      await tx.user.delete({
+        where: { id: userId },
+      });
 
-        await tx.store.updateMany({ where: { mitraId }, data: { isActive: false, deletedAt: new Date() } });
-        await tx.library.updateMany({ where: { mitraId }, data: { isActive: false, deletedAt: new Date() } });
-        await tx.community.updateMany({ where: { mitraId }, data: { isActive: false, deletedAt: new Date() } });
-      }
-
-      return { id: userId, message: 'Pengguna dan data mitra berhasil dihapus.' };
+      return { id: userId, message: 'Pengguna dan data mitra berhasil dihapus secara permanen.' };
     });
   }
 
@@ -547,25 +532,18 @@ class AdminService {
         where: { id: mitraId },
       });
 
-      if (!mitra || mitra.deletedAt) {
+      if (!mitra) {
         const error = new Error('Data mitra tidak ditemukan atau sudah dihapus.');
         error.statusCode = 404;
         throw error;
       }
 
-      await tx.mitraProfile.update({
+      // Hard delete mitra profile (cascades to stores, library, etc.)
+      await tx.mitraProfile.delete({
         where: { id: mitraId },
-        data: {
-          deletedAt: new Date(),
-          status: 'SUSPENDED',
-        },
       });
 
-      await tx.store.updateMany({ where: { mitraId }, data: { isActive: false, deletedAt: new Date() } });
-      await tx.library.updateMany({ where: { mitraId }, data: { isActive: false, deletedAt: new Date() } });
-      await tx.community.updateMany({ where: { mitraId }, data: { isActive: false, deletedAt: new Date() } });
-
-      return { id: mitraId, message: 'Data mitra berhasil dihapus dan dinonaktifkan.' };
+      return { id: mitraId, message: 'Data mitra berhasil dihapus secara permanen.' };
     });
   }
 }
