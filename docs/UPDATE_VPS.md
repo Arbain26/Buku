@@ -1,82 +1,101 @@
-# Panduan Update Kode Mabbaca di VPS
+# Alur Lengkap Update (Deployment) Kode Mabbaca di VPS
 
-Dokumen ini berisi panduan langkah demi langkah untuk memperbarui aplikasi (Backend dan Frontend) di VPS setelah Anda melakukan perubahan kode (commit & push) ke repository Git.
-
-## 1. Masuk ke VPS
-Akses VPS Anda menggunakan SSH:
-```bash
-ssh user@<IP_VPS_ANDA>
-```
-
-## 2. Navigasi ke Direktori Proyek
-Masuk ke folder tempat aplikasi Mabbaca di-deploy (misalnya `/var/www/mabbaca`):
-```bash
-cd /var/www/mabbaca
-```
-
-## 3. Tarik Pembaruan Kode Terbaru (Git Pull)
-Pastikan Anda berada di branch yang benar (misalnya `main`) lalu tarik kode terbaru:
-```bash
-git pull origin main
-```
-*(Ganti `main` dengan nama branch yang Anda gunakan di server).*
+Dokumen ini berisi standar alur kerja (SOP) lengkap dari awal hingga akhir untuk memperbarui sistem, baik pada bagian antarmuka pengguna (*Frontend*) maupun sistem data (*Backend*) di VPS Anda.
 
 ---
 
-## 4. Update Backend (Server)
+## TAHAP 1: Akses Server & Ambil Kode Terbaru
 
-Jika ada perubahan pada kode backend, routing, atau database (Prisma), ikuti langkah berikut:
-
-### 4.1 Masuk ke Folder Backend & Instal Dependensi Baru (Jika Ada)
+### 1. Masuk ke Server (VPS)
+Gunakan terminal / CMD (Command Prompt) di komputer lokal Anda untuk masuk ke VPS.
 ```bash
-cd /var/www/mabbaca/server
+ssh arbain@<IP_VPS_ANDA>
+# Contoh: ssh arbain@194.233.74.xxx
+```
+
+### 2. Pindah ke Folder Utama Proyek
+Semua kode tersimpan di dalam folder `Buku`. Anda harus berada di folder ini sebelum melakukan *pull*.
+```bash
+cd /var/www/Buku
+```
+
+### 3. Tarik Pembaruan Kode dari GitHub
+Tarik versi kode terbaru dari branch `main` GitHub Anda ke server:
+```bash
+git pull origin main
+```
+*(Catatan: Anda akan melihat pesan 'Fast-forward' jika pembaruan berhasil).*
+
+---
+
+## TAHAP 2: Update Server / API (Backend)
+Lakukan tahap ini **HANYA JIKA** Anda melakukan perubahan pada file di dalam folder `server/` (seperti perubahan API, rute, atau skema database).
+
+### 1. Masuk ke Folder Backend & Install Modul Baru
+Jika ada *library* baru yang ditambahkan, wajib menginstalnya.
+```bash
+cd /var/www/Buku/server
 npm install
 ```
 
-### 4.2 Update Prisma (Hanya jika ada perubahan pada `schema.prisma`)
-Jika Anda menambahkan, mengubah, atau menghapus tabel di database, jalankan perintah ini:
+### 2. Update Database Prisma (Opsional)
+Jalankan langkah ini **HANYA JIKA** Anda mengubah file `server/prisma/schema.prisma` (misal menambah tabel baru):
 ```bash
 npx prisma generate
 npx prisma migrate deploy
 ```
 
-### 4.3 Restart Service Backend (PM2)
-Restart proses backend yang berjalan di PM2 agar kode baru diterapkan:
+### 3. Restart Aplikasi Backend
+Restart server backend yang berjalan menggunakan *Process Manager* (PM2) agar kode yang baru diterapkan:
 ```bash
 pm2 restart mabbaca-backend
 ```
-*(Catatan: Pastikan nama aplikasi PM2 Anda adalah `mabbaca-backend`. Anda bisa mengecek daftarnya dengan perintah `pm2 status`).*
+*(Cek nama proses yang berjalan dengan mengetik `pm2 status`. Jika namanya berbeda, sesuaikan dengan nama yang muncul).*
 
 ---
 
-## 5. Update Frontend (Client / Vite)
+## TAHAP 3: Update Tampilan (Frontend / Client)
+Lakukan tahap ini jika Anda melakukan perubahan pada tata letak, komponen React, warna, atau halaman web di dalam folder `client/`.
 
-Jika ada perubahan pada kode antarmuka (React/Tailwind/CSS), ikuti langkah ini:
-
-### 5.1 Masuk ke Folder Client & Instal Dependensi Baru (Jika Ada)
+### 1. Masuk ke Folder Frontend & Install Modul Baru
+Masuk ke folder tampilan.
 ```bash
-cd /var/www/mabbaca/client
+cd /var/www/Buku/client
 npm install
 ```
 
-### 5.2 Build / Kompilasi Ulang Frontend
-Jalankan proses build agar Vite menghasilkan aset/file statis terbaru di folder `dist`:
+### 2. Proses Build (Kompilasi)
+Sistem web React (Vite) tidak bisa langsung dibaca browser dalam bentuk *source code*, melainkan harus di-*build* terlebih dahulu menjadi file statis (`dist`).
 ```bash
 npm run build
 ```
-*(Setelah build selesai, Nginx akan secara otomatis mendeteksi file statis terbaru dari folder `dist` karena letaknya sudah disetel di konfigurasi Nginx).*
+*(Tunggu beberapa detik. Setelah sukses, Nginx di server akan langsung menyajikan tampilan dari file hasil build ini).*
 
 ---
 
-## 6. Selesai
-Pembaruan telah berhasil diterapkan! Anda bisa langsung me-refresh dan mengecek aplikasi di browser Anda (contoh: `https://mabbaca.id`).
+## TAHAP 4: Verifikasi & Penanganan Masalah (Troubleshooting)
 
-**Tips Tambahan:**
-- **Melihat Log Error Backend**: Jika setelah update backend terjadi masalah (seperti API Error 500), cek log dengan perintah:
-  ```bash
-  pm2 logs mabbaca-backend --lines 50
-  ```
-- **Mereset Cache Nginx (Opsional)**: Jika tampilan frontend di browser belum berubah meskipun sudah di-build dan *hard-refresh* (Ctrl + F5), Anda bisa mencoba me-restart nginx (meskipun jarang dibutuhkan):
-  ```bash
-  sudo systemctl restart nginx
-  ```
+### 1. Cek Hasilnya di Web
+Buka web Anda di browser (contoh: `https://mabbaca.id`).
+Lakukan **Hard Refresh** untuk membersihkan *cache* browser lama:
+- **Windows / Linux:** `Ctrl + F5` atau `Ctrl + Shift + R`
+- **Mac:** `Cmd + Shift + R`
+
+### 2. Jika Terjadi Error API (Backend Mati / Error 500)
+Cek penyebab error pada log server PM2:
+```bash
+pm2 logs mabbaca-backend --lines 50
+```
+
+### 3. Jika Tampilan Masih Belum Berubah di Perangkat Lain
+Sesekali Nginx menyimpan *cache*. Anda bisa merestart layanan Nginx:
+```bash
+sudo systemctl restart nginx
+```
+
+---
+**Ringkasan Alur Cepat (Cheat Sheet):**
+1. `cd /var/www/Buku`
+2. `git pull origin main`
+3. Frontend: `cd client` -> `npm run build`
+4. Backend: `cd server` -> `pm2 restart mabbaca-backend`
