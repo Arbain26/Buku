@@ -49,7 +49,6 @@ export const BookDetailPage = () => {
   const [customerAddress, setCustomerAddress] = useState('');
   const [orderNotes, setOrderNotes] = useState('');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
-  const [createdOrderResult, setCreatedOrderResult] = useState(null);
 
   // Borrow Modal State
   const [isBorrowModalOpen, setIsBorrowModalOpen] = useState(false);
@@ -109,7 +108,6 @@ export const BookDetailPage = () => {
   const handleOpenOrderModal = (store) => {
     setSelectedStore(store);
     setOrderQuantity(1);
-    setCreatedOrderResult(null);
     setIsOrderModalOpen(true);
   };
 
@@ -135,35 +133,32 @@ export const BookDetailPage = () => {
 
       const res = await orderService.createOrder(payload);
       if (res?.data) {
-        setCreatedOrderResult(res.data);
-        showToast('Pesanan berhasil dibuat di sistem!', 'success');
+        showToast('Pesanan berhasil dibuat! Mengalihkan ke WhatsApp...', 'success');
+        
+        // Open WhatsApp link immediately
+        if (res.data.whatsappUrl) {
+          const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+          let finalUrl = res.data.whatsappUrl;
+          if (!isMobile) {
+            finalUrl = finalUrl.replace('https://api.whatsapp.com/send', 'https://web.whatsapp.com/send');
+          }
+          window.open(finalUrl, '_blank');
+          
+          // Mark as contacted in backend (fire and forget)
+          try {
+            orderService.contactWhatsapp(res.data.order.id);
+          } catch (err) {
+            console.warn('Could not mark contacted status:', err);
+          }
+        }
+        
+        setIsOrderModalOpen(false);
       }
     } catch (err) {
       const msg = err.response?.data?.message || 'Gagal membuat pesanan buku.';
       showToast(msg, 'error');
     } finally {
       setIsSubmittingOrder(false);
-    }
-  };
-
-  // Follow-up to WhatsApp
-  const handleContinueWhatsApp = async () => {
-    if (!createdOrderResult) return;
-    try {
-      // Mark as contacted in backend
-      await orderService.contactWhatsapp(createdOrderResult.order.id);
-    } catch (err) {
-      console.warn('Could not mark contacted status:', err);
-    }
-
-    // Open WhatsApp link
-    if (createdOrderResult.whatsappUrl) {
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      let finalUrl = createdOrderResult.whatsappUrl;
-      if (!isMobile) {
-        finalUrl = finalUrl.replace('https://api.whatsapp.com/send', 'https://web.whatsapp.com/send');
-      }
-      window.open(finalUrl, '_blank');
     }
   };
 
@@ -577,151 +572,100 @@ export const BookDetailPage = () => {
         </div>
       </section>
 
-      {/* WHATSAPP ORDER MODAL FLOW (SECTION 40) */}
+      {/* WHATSAPP ORDER MODAL FLOW */}
       <Modal
         isOpen={isOrderModalOpen}
-        onClose={() => {
-          setIsOrderModalOpen(false);
-          setCreatedOrderResult(null);
-        }}
-        title={createdOrderResult ? 'Ringkasan Pesanan Buku' : 'Pesan Buku via WhatsApp'}
+        onClose={() => setIsOrderModalOpen(false)}
+        title="Pesan Buku via WhatsApp"
         maxWidth="max-w-lg"
       >
-        {!createdOrderResult ? (
-          <form onSubmit={handleSubmitOrder} className="space-y-4 py-2">
-            <div className="p-3.5 rounded-2xl bg-[#E8F3EF] border border-[#cbe1d7] flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-[#075E54]">{book.title}</p>
-                <p className="text-[11px] text-[#66736D]">Toko: {selectedStore?.storeName}</p>
+        <form onSubmit={handleSubmitOrder} className="space-y-4 py-2">
+          <div className="p-3.5 rounded-2xl bg-[#E8F3EF] border border-[#cbe1d7] flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold text-[#075E54]">{book.title}</p>
+              <p className="text-[11px] text-[#66736D]">Toko: {selectedStore?.storeName}</p>
+            </div>
+            <p className="text-sm font-extrabold text-[#075E54]">
+              Rp {selectedStore?.price?.toLocaleString('id-ID')}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-[#17211D] mb-1">
+                Jumlah (Eks) *
+              </label>
+              <input
+                type="number"
+                min="1"
+                max={selectedStore?.stock || 10}
+                value={orderQuantity}
+                onChange={(e) => setOrderQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm border border-[#E2E8E5] focus:ring-2 focus:ring-[#075E54]"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#17211D] mb-1">
+                Estimasi Total
+              </label>
+              <div className="px-3.5 py-2 rounded-xl text-sm font-bold bg-gray-50 border border-[#E2E8E5] text-[#075E54]">
+                Rp {((selectedStore?.price || 0) * orderQuantity).toLocaleString('id-ID')}
               </div>
-              <p className="text-sm font-extrabold text-[#075E54]">
-                Rp {selectedStore?.price?.toLocaleString('id-ID')}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-[#17211D] mb-1">
-                  Jumlah (Eks) *
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max={selectedStore?.stock || 10}
-                  value={orderQuantity}
-                  onChange={(e) => setOrderQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs sm:text-sm border border-[#E2E8E5] focus:ring-2 focus:ring-[#075E54]"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#17211D] mb-1">
-                  Estimasi Total
-                </label>
-                <div className="px-3.5 py-2 rounded-xl text-sm font-bold bg-gray-50 border border-[#E2E8E5] text-[#075E54]">
-                  Rp {((selectedStore?.price || 0) * orderQuantity).toLocaleString('id-ID')}
-                </div>
-              </div>
-            </div>
-
-            <Input
-              label="Nama Pemesan *"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Contoh: Andi Muhammad"
-              required
-            />
-
-            <Input
-              label="Nomor WhatsApp Pemesan *"
-              value={customerPhone}
-              onChange={(e) => setCustomerPhone(e.target.value)}
-              placeholder="Contoh: 081234567890"
-              required
-            />
-
-            <Input
-              label="Alamat Pengiriman / Catatan Pengambilan"
-              value={customerAddress}
-              onChange={(e) => setCustomerAddress(e.target.value)}
-              placeholder="Contoh: Ambil di Toko / Jl. Poros Sidrap No. 10"
-            />
-
-            <Textarea
-              label="Catatan Tambahan (Opsional)"
-              value={orderNotes}
-              onChange={(e) => setOrderNotes(e.target.value)}
-              placeholder="Contoh: Mohon disampul plastik bening"
-              rows={2}
-            />
-
-            <div className="pt-3 border-t border-[#E2E8E5] flex items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsOrderModalOpen(false)}
-              >
-                Batal
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                isLoading={isSubmittingOrder}
-                className="bg-[#075E54] text-white font-bold"
-              >
-                Buat Pesanan
-              </Button>
-            </div>
-          </form>
-        ) : (
-          /* ORDER SUMMARY RECEIPT & WHATSAPP REDIRECT */
-          <div className="space-y-4 py-2">
-            <div className="p-4 rounded-2xl bg-[#E8F3EF] border border-[#cbe1d7] text-center space-y-1">
-              <span className="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#075E54] text-white uppercase tracking-wider mb-1">
-                Pesanan Terdaftar
-              </span>
-              <h4 className="text-base font-extrabold text-[#075E54]">
-                Order #{createdOrderResult.order?.orderNumber}
-              </h4>
-              <p className="text-xs text-[#17211D]">
-                Total Pesanan:{' '}
-                <strong>
-                  Rp {createdOrderResult.totalAmount?.toLocaleString('id-ID')}
-                </strong>
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs leading-relaxed space-y-1">
-              <p className="font-bold flex items-center gap-1.5 text-amber-800">
-                <ShieldCheck className="w-4 h-4 text-amber-700" /> Informasi Alur WhatsApp:
-              </p>
-              <p>
-                Nomor pesanan resmi telah dibuat di platform MABBACA. Transaksi pembayaran dan konfirmasi pengiriman akan Anda lanjutkan langsung dengan admin toko melalui chat WhatsApp resmi.
-              </p>
-            </div>
-
-            <div className="pt-3 border-t border-[#E2E8E5] flex flex-col gap-2">
-              <Button
-                size="lg"
-                onClick={handleContinueWhatsApp}
-                className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold gap-2 shadow-sm"
-              >
-                <MessageCircle className="w-5 h-5" /> Lanjut ke WhatsApp
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsOrderModalOpen(false)}
-                className="w-full border-[#E2E8E5]"
-              >
-                Tutup Ringkasan
-              </Button>
             </div>
           </div>
-        )}
+
+          <Input
+            label="Nama Pemesan *"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+            placeholder="Contoh: Andi Muhammad"
+            required
+          />
+
+          <Input
+            label="Nomor WhatsApp Pemesan *"
+            value={customerPhone}
+            onChange={(e) => setCustomerPhone(e.target.value)}
+            placeholder="Contoh: 081234567890"
+            required
+          />
+
+          <Input
+            label="Alamat Pengiriman / Catatan Pengambilan"
+            value={customerAddress}
+            onChange={(e) => setCustomerAddress(e.target.value)}
+            placeholder="Contoh: Ambil di Toko / Jl. Poros Sidrap No. 10"
+          />
+
+          <Textarea
+            label="Catatan Tambahan (Opsional)"
+            value={orderNotes}
+            onChange={(e) => setOrderNotes(e.target.value)}
+            placeholder="Contoh: Mohon disampul plastik bening"
+            rows={2}
+          />
+
+          <div className="pt-3 border-t border-[#E2E8E5] flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsOrderModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              isLoading={isSubmittingOrder}
+              className="bg-[#075E54] text-white font-bold"
+            >
+              Buat Pesanan
+            </Button>
+          </div>
+        </form>
       </Modal>
 
       {/* BORROW MODAL */}
