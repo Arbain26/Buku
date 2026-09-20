@@ -238,6 +238,7 @@ export const RegisterMitraPage = () => {
                   onChange={handleChange}
                   required
                   minLength={6}
+                  autoComplete="new-password"
                   className="w-full px-3.5 pr-10 py-2.5 rounded-xl text-xs sm:text-sm bg-gray-50 border border-[#E2E8E5] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#075E54]"
                 />
                 <button
