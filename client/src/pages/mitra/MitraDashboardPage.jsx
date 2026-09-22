@@ -1019,46 +1019,38 @@ export const MitraDashboardPage = () => {
         </div>
       </div>
 
-      {/* 8 Overview KPI Cards - Ekosistem Literasi Sidrap */}
-      <EcosystemStatsOverview
-        counts={dashboardData?.ecosystemCounts}
-        activeCard={
-          currentTab === 'products' || currentTab === 'collections'
-            ? 'books'
-            : currentTab === 'events'
-            ? 'events'
-            : currentTab === 'members'
-            ? 'communities'
-            : currentTab === 'stats'
-            ? 'users'
-            : null
-        }
-        onCardClick={(key) => {
-          if (key === 'books') {
-            if (mitraType === 'TOKO_BUKU') {
-              setSearchParams({ tab: 'products' });
+      {/* 8 Overview KPI Cards - Hanya tampil di menu Dashboard (Ringkasan) */}
+      {currentTab === 'dashboard' && (
+        <EcosystemStatsOverview
+          counts={dashboardData?.ecosystemCounts}
+          activeCard={null}
+          onCardClick={(key) => {
+            if (key === 'books') {
+              if (mitraType === 'TOKO_BUKU') {
+                setSearchParams({ tab: 'products' });
+                return true;
+              }
+              if (mitraType === 'PERPUSTAKAAN') {
+                setSearchParams({ tab: 'collections' });
+                return true;
+              }
+            }
+            if (key === 'events') {
+              setSearchParams({ tab: 'events' });
               return true;
             }
-            if (mitraType === 'PERPUSTAKAAN') {
-              setSearchParams({ tab: 'collections' });
+            if (key === 'communities' && mitraType === 'KOMUNITAS') {
+              setSearchParams({ tab: 'members' });
               return true;
             }
-          }
-          if (key === 'events') {
-            setSearchParams({ tab: 'events' });
-            return true;
-          }
-          if (key === 'communities' && mitraType === 'KOMUNITAS') {
-            setSearchParams({ tab: 'members' });
-            return true;
-          }
-          if (key === 'users') {
-            setSearchParams({ tab: 'stats' });
-            return true;
-          }
-          return false;
-        }}
-      />
+            if (key === 'users') {
+              setSearchParams({ tab: 'stats' });
+              return true;
+            }
+            return false;
+          }}
+        />
+      )}
 
       {/* Dynamic Sub-Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-gray-200 pb-1 overflow-x-auto scrollbar-none">

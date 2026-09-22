@@ -893,8 +893,9 @@ export const AdminDashboardPage = () => {
         )}
       </div>
 
-      {/* 8 Overview KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {/* 8 Overview KPI Cards - Hanya tampil pada menu Dashboard (overview) */}
+      {currentTab === 'overview' && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <div
           onClick={() => {
             setUserRoleFilter('USER');
@@ -1053,6 +1054,7 @@ export const AdminDashboardPage = () => {
           </span>
         </div>
       </div>
+      )}
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-gray-200 pb-1 overflow-x-auto scrollbar-none">

@@ -212,34 +212,36 @@ export const UserDashboardPage = () => {
         </div>
       </div>
 
-      {/* 3. EKOSISTEM LITERASI KABUPATEN SIDRAP */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm sm:text-base font-bold text-[#17211D] flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#075E54]" />
-              Kondisi Ekosistem Literasi Sidrap
-            </h2>
-            <p className="text-xs text-gray-500">
-              Jejaring perpustakaan, toko buku, komunitas literasi, dan agenda literasi se-Kabupaten Sidrap
-            </p>
+      {/* 3. EKOSISTEM LITERASI KABUPATEN SIDRAP (Hanya tampil di tab utama Dashboard) */}
+      {activeTab === 'misi' && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-[#17211D] flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#075E54]" />
+                Kondisi Ekosistem Literasi Sidrap
+              </h2>
+              <p className="text-xs text-gray-500">
+                Jejaring perpustakaan, toko buku, komunitas literasi, dan agenda literasi se-Kabupaten Sidrap
+              </p>
+            </div>
           </div>
+          <EcosystemStatsOverview
+            counts={dashboardData?.ecosystemCounts}
+            onCardClick={(key) => {
+              if (key === 'events') {
+                handleTabChange('event');
+                return true;
+              }
+              if (key === 'users') {
+                handleTabChange('leaderboard');
+                return true;
+              }
+              return false;
+            }}
+          />
         </div>
-        <EcosystemStatsOverview
-          counts={dashboardData?.ecosystemCounts}
-          onCardClick={(key) => {
-            if (key === 'events') {
-              handleTabChange('event');
-              return true;
-            }
-            if (key === 'users') {
-              handleTabChange('leaderboard');
-              return true;
-            }
-            return false;
-          }}
-        />
-      </div>
+      )}
 
       {/* 4. TABS NAVIGATION */}
       <Tabs
