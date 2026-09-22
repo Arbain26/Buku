@@ -49,7 +49,21 @@ Restart server backend yang berjalan menggunakan *Process Manager* (PM2) agar ko
 ```bash
 pm2 restart mabbaca-backend
 ```
-*(Cek nama proses yang berjalan dengan mengetik `pm2 status`. Jika namanya berbeda, sesuaikan dengan nama yang muncul).*
+
+> **Catatan jika muncul error:** `[PM2][ERROR] Process or Namespace mabbaca-backend not found`
+> 1. Cek nama/ID proses PM2 yang sedang aktif:
+>    ```bash
+>    pm2 list
+>    ```
+> 2. **Jika sudah ada proses berjalan** (misalnya bernama `app`, `server`, atau ID `0`):
+>    ```bash
+>    pm2 restart all
+>    ```
+> 3. **Jika daftar kosong atau ingin mendaftarkan nama `mabbaca-backend` secara permanen**:
+>    ```bash
+>    pm2 start src/app.js --name "mabbaca-backend"
+>    pm2 save
+>    ```
 
 ---
 
