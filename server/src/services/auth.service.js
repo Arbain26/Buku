@@ -370,6 +370,8 @@ class AuthService {
     if (data.district) updateData.district = data.district;
     if (file) {
       updateData.avatar = `/uploads/${file.filename}`;
+    } else if (data.avatar !== undefined && data.avatar !== null) {
+      updateData.avatar = data.avatar;
     }
 
     const updatedUser = await prisma.user.update({

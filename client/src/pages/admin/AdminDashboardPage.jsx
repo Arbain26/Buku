@@ -794,6 +794,29 @@ export const AdminDashboardPage = () => {
 
   const { counts, growthData } = dashboardData || {};
 
+  // Perhitungan KPI cards terintegrasi: Menggunakan data agregasi server (counts),
+  // dengan fallback otomatis ke data admin aktif agar angka selalu sinkron dan akurat
+  const computedCounts = {
+    totalUsers: counts?.totalUsers || usersList.filter((u) => u.role === 'USER').length || 0,
+    totalMitra: counts?.totalMitra || usersList.filter((u) => u.role === 'MITRA' || u.mitraProfile).length || 0,
+    totalBooks: counts?.totalBooks || booksList.length || 0,
+    totalLibraries:
+      counts?.totalLibraries ||
+      usersList.filter((u) => u.mitraProfile?.mitraType === 'PERPUSTAKAAN').length ||
+      0,
+    totalStores:
+      counts?.totalStores ||
+      usersList.filter((u) => u.mitraProfile?.mitraType === 'TOKO_BUKU').length ||
+      0,
+    totalCommunities:
+      counts?.totalCommunities ||
+      usersList.filter((u) => u.mitraProfile?.mitraType === 'KOMUNITAS').length ||
+      0,
+    totalEvents: counts?.totalEvents || eventsList.length || 0,
+    totalArticles: counts?.totalArticles || articlesList.length || 0,
+    pendingMitraCount: counts?.pendingMitraCount || pendingMitra.length || 0,
+  };
+
   // Filtered users
   const filteredUsers = usersList.filter((u) => {
     const q = searchQuery.toLowerCase();
@@ -859,71 +882,137 @@ export const AdminDashboardPage = () => {
           </p>
         </div>
 
-        {counts?.pendingMitraCount > 0 && (
+        {computedCounts.pendingMitraCount > 0 && (
           <button
             onClick={() => setSearchParams({ tab: 'verifikasi' })}
             className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-xs transition-colors animate-pulse"
           >
             <ShieldCheck className="w-4 h-4" />
-            {counts.pendingMitraCount} Mitra Menunggu Verifikasi
+            {computedCounts.pendingMitraCount} Mitra Menunggu Verifikasi
           </button>
         )}
       </div>
 
       {/* 8 Overview KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div
+          onClick={() => {
+            setUserRoleFilter('USER');
+            setSearchParams({ tab: 'users' });
+          }}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            currentTab === 'users' && userRoleFilter === 'USER'
+              ? 'bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+              : 'bg-white border-[#E5E7EB] hover:border-[#075E54] hover:shadow-xs'
+          }`}
+          title="Klik untuk melihat & mengelola Pengguna (Masyarakat & Pembaca)"
+        >
           <div className="flex items-center justify-between text-gray-500 text-xs mb-1">
-            <span>Total Pengguna</span>
+            <span className="font-semibold text-emerald-950">Total Pengguna</span>
             <Users className="w-4 h-4 text-[#075E54]" />
           </div>
-          <p className="text-2xl font-bold text-[#17211D]">{counts?.totalUsers || 0}</p>
-          <span className="text-[11px] text-gray-400">Masyarakat & Pembaca</span>
+          <p className="text-2xl font-bold text-[#17211D]">{computedCounts.totalUsers}</p>
+          <span className="text-[11px] text-[#075E54] font-medium flex items-center gap-0.5">
+            Masyarakat & Pembaca <ChevronRight className="w-3 h-3" />
+          </span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div
+          onClick={() => {
+            setUserRoleFilter('MITRA');
+            setSearchParams({ tab: 'users' });
+          }}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            currentTab === 'users' && userRoleFilter === 'MITRA'
+              ? 'bg-teal-50/60 border-teal-500 ring-2 ring-teal-500/20 shadow-xs'
+              : 'bg-white border-[#E5E7EB] hover:border-[#0F766E] hover:shadow-xs'
+          }`}
+          title="Klik untuk melihat & mengelola Mitra (Toko, Perpus & Komunitas)"
+        >
           <div className="flex items-center justify-between text-gray-500 text-xs mb-1">
-            <span>Total Mitra</span>
+            <span className="font-semibold text-teal-950">Total Mitra</span>
             <Building2 className="w-4 h-4 text-[#0F766E]" />
           </div>
-          <p className="text-2xl font-bold text-[#17211D]">{counts?.totalMitra || 0}</p>
-          <span className="text-[11px] text-gray-400">Toko, Perpus & Komunitas</span>
+          <p className="text-2xl font-bold text-[#17211D]">{computedCounts.totalMitra}</p>
+          <span className="text-[11px] text-[#0F766E] font-medium flex items-center gap-0.5">
+            Toko, Perpus & Komunitas <ChevronRight className="w-3 h-3" />
+          </span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div
+          onClick={() => setSearchParams({ tab: 'books' })}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            currentTab === 'books'
+              ? 'bg-emerald-50/60 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+              : 'bg-white border-[#E5E7EB] hover:border-emerald-500 hover:shadow-xs'
+          }`}
+          title="Klik untuk melihat & mengelola Katalog Buku"
+        >
           <div className="flex items-center justify-between text-gray-500 text-xs mb-1">
-            <span>Katalog Buku</span>
+            <span className="font-semibold text-emerald-950">Katalog Buku</span>
             <BookOpen className="w-4 h-4 text-emerald-600" />
           </div>
-          <p className="text-2xl font-bold text-[#17211D]">{counts?.totalBooks || 0}</p>
-          <span className="text-[11px] text-gray-400">Judul Terdaftar</span>
+          <p className="text-2xl font-bold text-[#17211D]">{computedCounts.totalBooks}</p>
+          <span className="text-[11px] text-emerald-700 font-medium flex items-center gap-0.5">
+            Judul Terdaftar <ChevronRight className="w-3 h-3" />
+          </span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div
+          onClick={() => {
+            setUserRoleFilter('MITRA');
+            setSearchQuery('Perpustakaan');
+            setSearchParams({ tab: 'users' });
+          }}
+          className="p-4 rounded-2xl border transition-all cursor-pointer bg-white border-[#E5E7EB] hover:border-teal-500 hover:shadow-xs"
+          title="Klik untuk memfilter Mitra Perpustakaan"
+        >
           <div className="flex items-center justify-between text-gray-500 text-xs mb-1">
-            <span>Perpustakaan</span>
+            <span className="font-semibold text-teal-950">Perpustakaan</span>
             <Landmark className="w-4 h-4 text-teal-600" />
           </div>
-          <p className="text-2xl font-bold text-[#17211D]">{counts?.totalLibraries || 0}</p>
-          <span className="text-[11px] text-gray-400">Titik Baca Daerah & Desa</span>
+          <p className="text-2xl font-bold text-[#17211D]">{computedCounts.totalLibraries}</p>
+          <span className="text-[11px] text-teal-700 font-medium flex items-center gap-0.5">
+            Titik Baca Daerah & Desa <ChevronRight className="w-3 h-3" />
+          </span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div
+          onClick={() => {
+            setUserRoleFilter('MITRA');
+            setSearchQuery('Toko');
+            setSearchParams({ tab: 'users' });
+          }}
+          className="p-4 rounded-2xl border transition-all cursor-pointer bg-white border-[#E5E7EB] hover:border-emerald-600 hover:shadow-xs"
+          title="Klik untuk memfilter Mitra Toko Buku"
+        >
           <div className="flex items-center justify-between text-gray-500 text-xs mb-1">
-            <span>Toko Buku</span>
+            <span className="font-semibold text-emerald-950">Toko Buku</span>
             <Store className="w-4 h-4 text-emerald-700" />
           </div>
-          <p className="text-2xl font-bold text-[#17211D]">{counts?.totalStores || 0}</p>
-          <span className="text-[11px] text-gray-400">Mitra Pedagang Buku</span>
+          <p className="text-2xl font-bold text-[#17211D]">{computedCounts.totalStores}</p>
+          <span className="text-[11px] text-emerald-800 font-medium flex items-center gap-0.5">
+            Mitra Pedagang Buku <ChevronRight className="w-3 h-3" />
+          </span>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div
+          onClick={() => {
+            setUserRoleFilter('MITRA');
+            setSearchQuery('Komunitas');
+            setSearchParams({ tab: 'users' });
+          }}
+          className="p-4 rounded-2xl border transition-all cursor-pointer bg-white border-[#E5E7EB] hover:border-cyan-600 hover:shadow-xs"
+          title="Klik untuk memfilter Mitra Komunitas & Lapak Baca"
+        >
           <div className="flex items-center justify-between text-gray-500 text-xs mb-1">
-            <span>Komunitas</span>
+            <span className="font-semibold text-cyan-950">Komunitas</span>
             <Users className="w-4 h-4 text-cyan-700" />
           </div>
-          <p className="text-2xl font-bold text-[#17211D]">{counts?.totalCommunities || 0}</p>
-          <span className="text-[11px] text-gray-400">Lapak Baca & Gerakan</span>
+          <p className="text-2xl font-bold text-[#17211D]">{computedCounts.totalCommunities}</p>
+          <span className="text-[11px] text-cyan-800 font-medium flex items-center gap-0.5">
+            Lapak Baca & Gerakan <ChevronRight className="w-3 h-3" />
+          </span>
         </div>
 
         <div
@@ -939,7 +1028,7 @@ export const AdminDashboardPage = () => {
             <span className="font-semibold text-indigo-950">Event Literasi</span>
             <Calendar className="w-4 h-4 text-indigo-600" />
           </div>
-          <p className="text-2xl font-bold text-[#17211D]">{counts?.totalEvents || eventsList.length || 0}</p>
+          <p className="text-2xl font-bold text-[#17211D]">{computedCounts.totalEvents}</p>
           <span className="text-[11px] text-indigo-600 font-semibold flex items-center gap-0.5">
             Agenda Terdaftar <ChevronRight className="w-3 h-3" />
           </span>
@@ -958,7 +1047,7 @@ export const AdminDashboardPage = () => {
             <span className="font-semibold text-amber-950">Baca 5 Menit</span>
             <FileText className="w-4 h-4 text-amber-600" />
           </div>
-          <p className="text-2xl font-bold text-[#17211D]">{counts?.totalArticles || articlesList.length || 0}</p>
+          <p className="text-2xl font-bold text-[#17211D]">{computedCounts.totalArticles}</p>
           <span className="text-[11px] text-amber-600 font-semibold flex items-center gap-0.5">
             Artikel Edukasi <ChevronRight className="w-3 h-3" />
           </span>

@@ -10,7 +10,6 @@ Dokumen ini berisi standar alur kerja (SOP) lengkap dari awal hingga akhir untuk
 Gunakan terminal / CMD (Command Prompt) di komputer lokal Anda untuk masuk ke VPS.
 ```bash
 ssh arbain@<IP_VPS_ANDA>
-# Contoh: ssh arbain@194.233.74.xxx
 ```
 
 ### 2. Pindah ke Folder Utama Proyek

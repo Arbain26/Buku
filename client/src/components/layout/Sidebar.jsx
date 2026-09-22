@@ -16,8 +16,11 @@ import {
   X,
   Layers,
   Sparkles,
+  User,
+  Edit,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { resolveImageUrl } from '../common/ImageWithFallback';
 
 export const Sidebar = ({ isMobileOpen, onClose, type = 'mitra' }) => {
   const location = useLocation();
@@ -81,6 +84,9 @@ export const Sidebar = ({ isMobileOpen, onClose, type = 'mitra' }) => {
     ]},
     { section: 'Analytics', items: [
       { name: 'Statistik Literasi', path: '/admin/dashboard?tab=literasi-stats', icon: BarChart3 },
+    ]},
+    { section: 'Akun & Profil', items: [
+      { name: 'Profil Administrator', path: '/admin/profile', icon: User },
     ]},
   ];
 
@@ -190,22 +196,27 @@ export const Sidebar = ({ isMobileOpen, onClose, type = 'mitra' }) => {
         </div>
 
         {/* Bottom User Profile card & Logout */}
-        <div className="p-4 border-t border-white/10 bg-black/10 shrink-0">
-          <div className="flex items-center gap-3 mb-3">
+        <div className="p-4 border-t border-white/10 bg-black/10 shrink-0 space-y-2">
+          <Link
+            to={type === 'admin' ? '/admin/profile' : '/profile'}
+            onClick={() => onClose && onClose()}
+            className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-white/10 transition-all group"
+            title="Klik untuk mengelola profil & ganti foto"
+          >
             <img
-              src={user?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80'}
+              src={resolveImageUrl(user?.avatar) || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80'}
               alt={user?.name}
-              className="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-400/40"
+              className="w-9 h-9 rounded-full object-cover ring-2 ring-emerald-400/40 group-hover:ring-white transition-all"
             />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-xs font-bold text-white truncate group-hover:text-emerald-200 transition-colors">
                 {user?.mitraProfile?.organizationName || user?.name}
               </p>
-              <p className="text-[10px] text-emerald-200 truncate">
-                {user?.district ? `${user.district}, Sidrap` : user?.email}
+              <p className="text-[10px] text-emerald-300/80 truncate flex items-center gap-1">
+                Edit Profil <Edit className="w-2.5 h-2.5 opacity-70" />
               </p>
             </div>
-          </div>
+          </Link>
 
           <button
             onClick={handleLogout}

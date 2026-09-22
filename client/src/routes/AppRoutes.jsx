@@ -217,6 +217,7 @@ export const AppRoutes = () => {
           }
         >
           <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
 
         {/* Mitra Dashboard Panel with dedicated sidebar & role protection */}
@@ -229,6 +230,7 @@ export const AppRoutes = () => {
           }
         >
           <Route path="dashboard" element={<MitraDashboardPage />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
 
         {/* Fallback */}

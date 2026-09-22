@@ -3,116 +3,151 @@ const prisma = require('../config/db');
 class AdminService {
   // Admin Dashboard Metrics & Real Growth Analytics
   async getAdminDashboard() {
-    const [
-      totalUsers,
-      totalMitra,
-      pendingMitraCount,
-      totalBooks,
-      totalStores,
-      totalLibraries,
-      totalCommunities,
-      totalEvents,
-      totalArticles,
-      totalOrders,
-      totalBorrowings,
-      totalEventParticipants,
-    ] = await Promise.all([
-      prisma.user.count({ where: { role: 'USER', deletedAt: null } }),
-      prisma.mitraProfile.count({ where: { deletedAt: null } }),
-      prisma.mitraProfile.count({ where: { status: 'PENDING' } }),
-      prisma.book.count({ where: { deletedAt: null } }),
-      prisma.store.count({ where: { isActive: true, deletedAt: null } }),
-      prisma.library.count({ where: { isActive: true, deletedAt: null } }),
-      prisma.community.count({ where: { isActive: true, deletedAt: null } }),
-      prisma.event.count({ where: { status: { not: 'CANCELLED' } } }),
-      prisma.article.count({ where: { status: 'PUBLISHED', deletedAt: null } }),
-      prisma.order.count(),
-      prisma.borrowing.count(),
-      prisma.eventParticipant.count(),
-    ]);
-
-    // === 1. Dynamic District Stats (Real Data) ===
-    const sidrapDistricts = [
-      'Pangkajene', 'Maritengngae', 'Baranti', 'Watang Pulu', 
-      'Dua Pitue', 'Panca Rijang', 'Kulo', 'Tellu Limpoe', 
-      'Pitu Riase', 'Watang Sidenreng', 'Pitu Riawa'
-    ];
-    
-    // Fetch raw data with district info
-    const [libData, storeData, comData, evtData] = await Promise.all([
-      prisma.library.findMany({ where: { isActive: true, deletedAt: null }, select: { district: true } }),
-      prisma.store.findMany({ where: { isActive: true, deletedAt: null }, select: { district: true } }),
-      prisma.community.findMany({ where: { isActive: true, deletedAt: null }, select: { district: true } }),
-      prisma.event.findMany({ where: { status: { not: 'CANCELLED' } }, select: { location: true } }),
-    ]);
-
-    const formattedDistrictStats = sidrapDistricts.map(districtName => {
-      const p = libData.filter(l => l.district?.includes(districtName)).length;
-      const t = storeData.filter(s => s.district?.includes(districtName)).length;
-      const c = comData.filter(com => com.district?.includes(districtName)).length;
-      const e = evtData.filter(ev => ev.location?.includes(districtName)).length;
-      return {
-        district: districtName,
-        perpustakaan: p,
-        tokoBuku: t,
-        komunitas: c,
-        event: e,
-        totalLiterasi: p + t + c + e
-      };
-    }).filter(d => d.totalLiterasi > 0 || sidrapDistricts.slice(0,8).includes(d.district));
-
-    // === 2. Dynamic Growth Data (Last 5 Months) ===
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
-    const now = new Date();
-    const growthData = [];
-    
-    // Fetch records for the last 5 months
-    const fiveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 4, 1);
-    
-    const [userGrowth, eventGrowth, borrowGrowth, orderGrowth] = await Promise.all([
-      prisma.user.findMany({ where: { createdAt: { gte: fiveMonthsAgo } }, select: { createdAt: true } }),
-      prisma.eventParticipant.findMany({ where: { createdAt: { gte: fiveMonthsAgo } }, select: { createdAt: true } }),
-      prisma.borrowing.findMany({ where: { createdAt: { gte: fiveMonthsAgo } }, select: { createdAt: true } }),
-      prisma.order.findMany({ where: { createdAt: { gte: fiveMonthsAgo } }, select: { createdAt: true } }),
-    ]);
-
-    for (let i = 4; i >= 0; i--) {
-      const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const targetMonth = targetDate.getMonth();
-      const targetYear = targetDate.getFullYear();
-      
-      const filterByMonth = (items) => items.filter(item => 
-        new Date(item.createdAt).getMonth() === targetMonth && 
-        new Date(item.createdAt).getFullYear() === targetYear
-      ).length;
-
-      growthData.push({
-        month: monthNames[targetMonth],
-        pengguna: filterByMonth(userGrowth),
-        event: filterByMonth(eventGrowth),
-        peminjaman: filterByMonth(borrowGrowth),
-        pemesanan: filterByMonth(orderGrowth),
-      });
-    }
-
-    return {
-      counts: {
+    try {
+      const [
         totalUsers,
-        totalMitra,
+        mitraProfileCount,
+        userMitraCount,
         pendingMitraCount,
         totalBooks,
-        totalStores,
-        totalLibraries,
-        totalCommunities,
+        storeCount,
+        libCount,
+        commCount,
+        mitraStores,
+        mitraLibs,
+        mitraComms,
         totalEvents,
         totalArticles,
         totalOrders,
         totalBorrowings,
         totalEventParticipants,
-      },
-      growthData,
-      districtStats: formattedDistrictStats,
-    };
+      ] = await Promise.all([
+        prisma.user.count({ where: { role: 'USER', deletedAt: null } }).catch(() => 0),
+        prisma.mitraProfile.count({ where: { deletedAt: null } }).catch(() => 0),
+        prisma.user.count({ where: { role: 'MITRA', deletedAt: null } }).catch(() => 0),
+        prisma.mitraProfile.count({ where: { status: 'PENDING' } }).catch(() => 0),
+        prisma.book.count({ where: { deletedAt: null } }).catch(() => 0),
+        prisma.store.count({ where: { deletedAt: null } }).catch(() => 0),
+        prisma.library.count({ where: { deletedAt: null } }).catch(() => 0),
+        prisma.community.count({ where: { deletedAt: null } }).catch(() => 0),
+        prisma.mitraProfile.count({ where: { mitraType: 'TOKO_BUKU', deletedAt: null } }).catch(() => 0),
+        prisma.mitraProfile.count({ where: { mitraType: 'PERPUSTAKAAN', deletedAt: null } }).catch(() => 0),
+        prisma.mitraProfile.count({ where: { mitraType: 'KOMUNITAS', deletedAt: null } }).catch(() => 0),
+        prisma.event.count({ where: { status: { not: 'CANCELLED' } } }).catch(() => 0),
+        prisma.article.count({ where: { status: 'PUBLISHED', deletedAt: null } }).catch(() => 0),
+        prisma.order.count().catch(() => 0),
+        prisma.borrowing.count().catch(() => 0),
+        prisma.eventParticipant.count().catch(() => 0),
+      ]);
+
+      const totalMitra = Math.max(mitraProfileCount, userMitraCount);
+      const totalStores = Math.max(storeCount, mitraStores);
+      const totalLibraries = Math.max(libCount, mitraLibs);
+      const totalCommunities = Math.max(commCount, mitraComms);
+
+      // === 1. Dynamic District Stats (Real Data) ===
+      const sidrapDistricts = [
+        'Pangkajene', 'Maritengngae', 'Baranti', 'Watang Pulu', 
+        'Dua Pitue', 'Panca Rijang', 'Kulo', 'Tellu Limpoe', 
+        'Pitu Riase', 'Watang Sidenreng', 'Pitu Riawa'
+      ];
+      
+      // Fetch raw data with district info
+      const [libData, storeData, comData, evtData] = await Promise.all([
+        prisma.library.findMany({ where: { isActive: true, deletedAt: null }, select: { district: true } }).catch(() => []),
+        prisma.store.findMany({ where: { isActive: true, deletedAt: null }, select: { district: true } }).catch(() => []),
+        prisma.community.findMany({ where: { isActive: true, deletedAt: null }, select: { district: true } }).catch(() => []),
+        prisma.event.findMany({ where: { status: { not: 'CANCELLED' } }, select: { location: true } }).catch(() => []),
+      ]);
+
+      const formattedDistrictStats = sidrapDistricts.map(districtName => {
+        const p = libData.filter(l => l.district?.includes(districtName)).length;
+        const t = storeData.filter(s => s.district?.includes(districtName)).length;
+        const c = comData.filter(com => com.district?.includes(districtName)).length;
+        const e = evtData.filter(ev => ev.location?.includes(districtName)).length;
+        return {
+          district: districtName,
+          perpustakaan: p,
+          tokoBuku: t,
+          komunitas: c,
+          event: e,
+          totalLiterasi: p + t + c + e
+        };
+      }).filter(d => d.totalLiterasi > 0 || sidrapDistricts.slice(0,8).includes(d.district));
+
+      // === 2. Dynamic Growth Data (Last 5 Months) ===
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
+      const now = new Date();
+      const growthData = [];
+      
+      // Fetch records for the last 5 months
+      const fiveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 4, 1);
+      
+      const [userGrowth, eventGrowth, borrowGrowth, orderGrowth] = await Promise.all([
+        prisma.user.findMany({ where: { createdAt: { gte: fiveMonthsAgo } }, select: { createdAt: true } }).catch(() => []),
+        prisma.eventParticipant.findMany({ where: { registeredAt: { gte: fiveMonthsAgo } }, select: { registeredAt: true } }).catch(() => []),
+        prisma.borrowing.findMany({ where: { createdAt: { gte: fiveMonthsAgo } }, select: { createdAt: true } }).catch(() => []),
+        prisma.order.findMany({ where: { createdAt: { gte: fiveMonthsAgo } }, select: { createdAt: true } }).catch(() => []),
+      ]);
+
+      for (let i = 4; i >= 0; i--) {
+        const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const targetMonth = targetDate.getMonth();
+        const targetYear = targetDate.getFullYear();
+        
+        const filterByMonth = (items, dateField = 'createdAt') => items.filter(item => {
+          const d = item[dateField] ? new Date(item[dateField]) : null;
+          return d && d.getMonth() === targetMonth && d.getFullYear() === targetYear;
+        }).length;
+
+        growthData.push({
+          month: monthNames[targetMonth],
+          pengguna: filterByMonth(userGrowth, 'createdAt'),
+          event: filterByMonth(eventGrowth, 'registeredAt'),
+          peminjaman: filterByMonth(borrowGrowth, 'createdAt'),
+          pemesanan: filterByMonth(orderGrowth, 'createdAt'),
+        });
+      }
+
+      return {
+        counts: {
+          totalUsers,
+          totalMitra,
+          pendingMitraCount,
+          totalBooks,
+          totalStores,
+          totalLibraries,
+          totalCommunities,
+          totalEvents,
+          totalArticles,
+          totalOrders,
+          totalBorrowings,
+          totalEventParticipants,
+        },
+        growthData,
+        districtStats: formattedDistrictStats,
+      };
+    } catch (error) {
+      console.error('Error in getAdminDashboard:', error);
+      return {
+        counts: {
+          totalUsers: 0,
+          totalMitra: 0,
+          pendingMitraCount: 0,
+          totalBooks: 0,
+          totalStores: 0,
+          totalLibraries: 0,
+          totalCommunities: 0,
+          totalEvents: 0,
+          totalArticles: 0,
+          totalOrders: 0,
+          totalBorrowings: 0,
+          totalEventParticipants: 0,
+        },
+        growthData: [],
+        districtStats: [],
+      };
+    }
   }
 
   // Get Mitra list with status filter and pagination

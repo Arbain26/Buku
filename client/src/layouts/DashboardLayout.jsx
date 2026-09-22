@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Sidebar } from '../components/layout/Sidebar';
-import { Menu, Bell, Home, ChevronRight } from 'lucide-react';
+import { Menu, Bell, Home, ChevronRight, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { resolveImageUrl } from '../components/common/ImageWithFallback';
 
 export const DashboardLayout = ({ type = 'mitra' }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -50,16 +51,25 @@ export const DashboardLayout = ({ type = 'mitra' }) => {
               Lihat Website Utama →
             </Link>
 
-            <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
+            <Link
+              to={type === 'admin' ? '/admin/profile' : '/profile'}
+              className="flex items-center gap-2 pl-3 border-l border-gray-200 hover:opacity-80 transition-all group"
+              title="Klik untuk mengelola profil & ganti foto"
+            >
               <img
-                src={user?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80'}
+                src={resolveImageUrl(user?.avatar) || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80'}
                 alt={user?.name}
-                className="w-8 h-8 rounded-full object-cover border border-emerald-600/30"
+                className="w-8 h-8 rounded-full object-cover border border-emerald-600/30 group-hover:ring-2 group-hover:ring-[#075E54]/50 transition-all"
               />
-              <span className="text-xs font-semibold text-[#17211D] hidden md:block">
-                {user?.mitraProfile?.organizationName || user?.name}
-              </span>
-            </div>
+              <div className="hidden md:flex flex-col text-left">
+                <span className="text-xs font-semibold text-[#17211D] group-hover:text-[#075E54] transition-colors leading-tight">
+                  {user?.mitraProfile?.organizationName || user?.name}
+                </span>
+                <span className="text-[10px] text-gray-400 font-medium leading-tight">
+                  {type === 'admin' ? 'Admin MABBACA' : 'Mitra'} • Edit Profil
+                </span>
+              </div>
+            </Link>
           </div>
         </header>
 

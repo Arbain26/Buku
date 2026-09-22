@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User } from 'lucide-react';
+import { resolveImageUrl } from './ImageWithFallback';
 
 export const Avatar = ({
   src,
@@ -10,6 +11,10 @@ export const Avatar = ({
   status,
 }) => {
   const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [src]);
 
   const sizes = {
     xs: 'w-6 h-6 text-[10px]',
@@ -26,11 +31,13 @@ export const Avatar = ({
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   };
 
+  const resolvedSrc = resolveImageUrl(src);
+
   return (
     <div className={`relative inline-block shrink-0 ${className}`}>
-      {src && !hasError ? (
+      {resolvedSrc && !hasError ? (
         <img
-          src={src}
+          src={resolvedSrc}
           alt={alt || name}
           onError={() => setHasError(true)}
           className={`rounded-full object-cover border border-[#E2E8E5] ${sizes[size]}`}
