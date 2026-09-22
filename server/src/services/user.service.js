@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const adminService = require('./admin.service');
 
 class UserService {
   // Get all users (Admin view with pagination & search)
@@ -200,6 +201,8 @@ class UserService {
       };
     });
 
+    const ecosystemCounts = await adminService.getEcosystemCounts().catch(() => null);
+
     return {
       user: {
         id: user.id,
@@ -211,6 +214,7 @@ class UserService {
         level: user.level,
         district: user.district,
       },
+      ecosystemCounts,
       missions: missionsWithStatus,
       recentActivities: user.activities,
       activeBorrowings: user.borrowings,

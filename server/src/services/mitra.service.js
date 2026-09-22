@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const adminService = require('./admin.service');
 
 class MitraService {
   // Ambil profil Mitra lengkap
@@ -121,10 +122,12 @@ class MitraService {
     }
 
     const { mitraType, id: mitraId } = mitra;
+    const ecosystemCounts = await adminService.getEcosystemCounts().catch(() => null);
 
     let dashboardData = {
       profile: mitra,
       mitraType,
+      ecosystemCounts,
     };
 
     // A. TOKO_BUKU

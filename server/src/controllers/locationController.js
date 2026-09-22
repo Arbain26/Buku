@@ -25,7 +25,17 @@ const getNearby = async (req, res, next) => {
   }
 };
 
+const getEcosystemStats = async (req, res, next) => {
+  try {
+    const stats = await locationService.getEcosystemStats();
+    return successResponse(res, 'Statistik ekosistem literasi Sidrap berhasil dimuat.', stats);
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getLocations,
   getNearby,
+  getEcosystemStats,
 };

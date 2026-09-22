@@ -164,6 +164,13 @@ export const searchService = {
   },
 };
 
+export const ecosystemService = {
+  async getOverviewStats() {
+    const res = await api.get('/locations/ecosystem-stats');
+    return res.data;
+  },
+};
+
 export const userService = {
   async getDashboard() {
     const res = await api.get('/user/dashboard');

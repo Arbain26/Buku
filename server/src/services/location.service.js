@@ -1,7 +1,13 @@
 const prisma = require('../config/db');
+const adminService = require('./admin.service');
 const { calculateDistance, formatDistance, SIDRAP_DEFAULT_LAT, SIDRAP_DEFAULT_LNG } = require('../utils/haversine');
 
 class LocationService {
+  // Ambil semua ringkasan statistik ekosistem literasi
+  async getEcosystemStats() {
+    return adminService.getEcosystemCounts();
+  }
+
   // Ambil semua lokasi kecamatan di Sidrap
   async getLocations() {
     return prisma.location.findMany({

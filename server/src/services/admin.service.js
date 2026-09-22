@@ -1,8 +1,8 @@
 const prisma = require('../config/db');
 
 class AdminService {
-  // Admin Dashboard Metrics & Real Growth Analytics
-  async getAdminDashboard() {
+  // Method umum untuk mengambil ringkasan angka ekosistem literasi Sidrap
+  async getEcosystemCounts() {
     try {
       const [
         totalUsers,
@@ -44,6 +44,44 @@ class AdminService {
       const totalStores = Math.max(storeCount, mitraStores);
       const totalLibraries = Math.max(libCount, mitraLibs);
       const totalCommunities = Math.max(commCount, mitraComms);
+
+      return {
+        totalUsers,
+        totalMitra,
+        pendingMitraCount,
+        totalBooks,
+        totalStores,
+        totalLibraries,
+        totalCommunities,
+        totalEvents,
+        totalArticles,
+        totalOrders,
+        totalBorrowings,
+        totalEventParticipants,
+      };
+    } catch (err) {
+      console.error('Error in getEcosystemCounts:', err);
+      return {
+        totalUsers: 0,
+        totalMitra: 0,
+        pendingMitraCount: 0,
+        totalBooks: 0,
+        totalStores: 0,
+        totalLibraries: 0,
+        totalCommunities: 0,
+        totalEvents: 0,
+        totalArticles: 0,
+        totalOrders: 0,
+        totalBorrowings: 0,
+        totalEventParticipants: 0,
+      };
+    }
+  }
+
+  // Admin Dashboard Metrics & Real Growth Analytics
+  async getAdminDashboard() {
+    try {
+      const counts = await this.getEcosystemCounts();
 
       // === 1. Dynamic District Stats (Real Data) ===
       const sidrapDistricts = [
@@ -110,20 +148,7 @@ class AdminService {
       }
 
       return {
-        counts: {
-          totalUsers,
-          totalMitra,
-          pendingMitraCount,
-          totalBooks,
-          totalStores,
-          totalLibraries,
-          totalCommunities,
-          totalEvents,
-          totalArticles,
-          totalOrders,
-          totalBorrowings,
-          totalEventParticipants,
-        },
+        counts,
         growthData,
         districtStats: formattedDistrictStats,
       };

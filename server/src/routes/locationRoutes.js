@@ -5,5 +5,6 @@ const router = express.Router();
 
 router.get('/', locationController.getLocations);
 router.get('/nearby', locationController.getNearby);
+router.get('/ecosystem-stats', locationController.getEcosystemStats);
 
 module.exports = router;
