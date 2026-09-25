@@ -63,7 +63,7 @@ const getLibraryCollections = async (req, res, next) => {
 
 const addLibraryCollection = async (req, res, next) => {
   try {
-    const { bookId, callNumber, quantity, shelfLocation, category } = req.body;
+    const { bookId, callNumber, quantity, shelfLocation, category, readUrl } = req.body;
     if (!bookId) {
       return errorResponse(res, 'Buku wajib dipilih.', 400);
     }
@@ -73,6 +73,7 @@ const addLibraryCollection = async (req, res, next) => {
       quantity,
       shelfLocation,
       category,
+      readUrl,
     });
     return successResponse(res, 'Buku berhasil ditambahkan ke koleksi perpustakaan.', collection, 201);
   } catch (error) {

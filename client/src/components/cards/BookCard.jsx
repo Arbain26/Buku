@@ -50,8 +50,13 @@ export const BookCard = ({ book }) => {
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         {categoryName && (
-          <span className="absolute top-2 left-2 bg-white/95 backdrop-blur-xs text-[11px] font-semibold text-[#075E54] px-2 py-0.5 rounded-md border border-[#cbe1d7] shadow-xs max-w-[80%] truncate">
+          <span className="absolute top-2 left-2 bg-white/95 backdrop-blur-xs text-[11px] font-semibold text-[#075E54] px-2 py-0.5 rounded-md border border-[#cbe1d7] shadow-xs max-w-[65%] truncate">
             {categoryName}
+          </span>
+        )}
+        {(book.hasDigitalRead || book.readUrl) && (
+          <span className="absolute top-2 right-2 bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-xs flex items-center gap-1">
+            <BookOpen className="w-3 h-3" /> Online
           </span>
         )}
       </div>

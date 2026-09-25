@@ -90,6 +90,7 @@ export const MitraDashboardPage = () => {
     callNumber: '',
     totalStock: '5',
     locationShelf: 'Rak Utama',
+    readUrl: '',
     description: '',
     coverImage: '',
   });
@@ -113,6 +114,7 @@ export const MitraDashboardPage = () => {
     callNumber: '',
     totalStock: '',
     locationShelf: '',
+    readUrl: '',
     description: '',
     coverImage: '',
   });
@@ -351,6 +353,7 @@ export const MitraDashboardPage = () => {
       callNumber: '',
       totalStock: '5',
       locationShelf: 'Rak Utama',
+      readUrl: '',
       description: '',
       coverImage: '',
     });
@@ -410,6 +413,7 @@ export const MitraDashboardPage = () => {
       callNumber: item.callNumber || '',
       totalStock: item.totalStock !== undefined ? String(item.totalStock) : '',
       locationShelf: item.locationShelf || '',
+      readUrl: item.readUrl || '',
       description: item.description || '',
       coverImage: item.coverImage || '',
     });
@@ -1521,6 +1525,7 @@ export const MitraDashboardPage = () => {
                     <th className="p-3">Judul & Penulis</th>
                     <th className="p-3">No. Panggil</th>
                     <th className="p-3">Lokasi Rak</th>
+                    <th className="p-3">Link Digital</th>
                     <th className="p-3">Stok Siap Pinjam</th>
                     <th className="p-3 text-right">Aksi</th>
                   </tr>
@@ -1543,6 +1548,22 @@ export const MitraDashboardPage = () => {
                         {item.callNumber || '-'}
                       </td>
                       <td className="p-3 text-gray-600">{item.locationShelf || 'Rak Umum'}</td>
+                      <td className="p-3">
+                        {item.readUrl ? (
+                          <a
+                            href={item.readUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2 py-1 rounded-lg transition"
+                            title={item.readUrl}
+                          >
+                            <ExternalLink className="w-3 h-3 text-teal-600" />
+                            Buka Link
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-[11px] italic">Hanya Fisik</span>
+                        )}
+                      </td>
                       <td className="p-3">
                         <span className="font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md">
                           {item.availableStock} / {item.totalStock} eks
@@ -2481,16 +2502,36 @@ export const MitraDashboardPage = () => {
           </div>
 
           {mitraType === 'PERPUSTAKAAN' && (
-            <div>
-              <label className="block font-medium text-gray-700 mb-1">Lokasi Rak / Lemari</label>
-              <input
-                type="text"
-                name="locationShelf"
-                value={inventoryForm.locationShelf}
-                onChange={handleFormChange}
-                placeholder="Rak A-3 Lantai 1"
-                className="w-full p-2.5 rounded-xl border border-gray-200"
-              />
+            <div className="space-y-3">
+              <div>
+                <label className="block font-medium text-gray-700 mb-1">Lokasi Rak / Lemari</label>
+                <input
+                  type="text"
+                  name="locationShelf"
+                  value={inventoryForm.locationShelf}
+                  onChange={handleFormChange}
+                  placeholder="Rak A-3 Lantai 1"
+                  className="w-full p-2.5 rounded-xl border border-gray-200"
+                />
+              </div>
+
+              <div>
+                <label className="block font-medium text-gray-700 mb-1 flex items-center justify-between">
+                  <span>Link Baca Digital / E-Book (Opsional)</span>
+                  <span className="text-[10px] text-[#075E54] font-semibold bg-emerald-50 px-2 py-0.5 rounded">Tautan Online</span>
+                </label>
+                <input
+                  type="url"
+                  name="readUrl"
+                  value={inventoryForm.readUrl || ''}
+                  onChange={handleFormChange}
+                  placeholder="https://... (contoh: tautan PDF, Google Drive, iPusnas, repositori)"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs"
+                />
+                <p className="text-[11px] text-gray-500 mt-1">
+                  Masukkan tautan jika buku ini dapat dibaca langsung secara online/digital oleh pemustaka.
+                </p>
+              </div>
             </div>
           )}
 
@@ -2734,26 +2775,46 @@ export const MitraDashboardPage = () => {
               />
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-medium text-gray-700 mb-1">Jumlah Stok Koleksi</label>
-                <input
-                  type="number"
-                  name="totalStock"
-                  value={editForm.totalStock}
-                  onChange={handleEditFormChange}
-                  className="w-full p-2.5 rounded-xl border border-gray-200"
-                />
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-medium text-gray-700 mb-1">Jumlah Stok Koleksi</label>
+                  <input
+                    type="number"
+                    name="totalStock"
+                    value={editForm.totalStock}
+                    onChange={handleEditFormChange}
+                    className="w-full p-2.5 rounded-xl border border-gray-200"
+                  />
+                </div>
+                <div>
+                  <label className="block font-medium text-gray-700 mb-1">Lokasi Rak</label>
+                  <input
+                    type="text"
+                    name="locationShelf"
+                    value={editForm.locationShelf}
+                    onChange={handleEditFormChange}
+                    className="w-full p-2.5 rounded-xl border border-gray-200"
+                  />
+                </div>
               </div>
+
               <div>
-                <label className="block font-medium text-gray-700 mb-1">Lokasi Rak</label>
+                <label className="block font-medium text-gray-700 mb-1 flex items-center justify-between">
+                  <span>Link Baca Digital / E-Book (Opsional)</span>
+                  <span className="text-[10px] text-[#075E54] font-semibold bg-emerald-50 px-2 py-0.5 rounded">Tautan Online</span>
+                </label>
                 <input
-                  type="text"
-                  name="locationShelf"
-                  value={editForm.locationShelf}
+                  type="url"
+                  name="readUrl"
+                  value={editForm.readUrl || ''}
                   onChange={handleEditFormChange}
-                  className="w-full p-2.5 rounded-xl border border-gray-200"
+                  placeholder="https://... (contoh: tautan PDF, Google Drive, iPusnas, repositori)"
+                  className="w-full p-2.5 rounded-xl border border-gray-200 text-xs"
                 />
+                <p className="text-[11px] text-gray-500 mt-1">
+                  Masukkan tautan jika buku ini dapat dibaca langsung secara online/digital oleh pemustaka.
+                </p>
               </div>
             </div>
           )}

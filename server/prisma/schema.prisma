@@ -139,6 +139,7 @@ model Book {
   rating             Float               @default(0)
   reviewCount        Int                 @default(0)
   categoryId         Int
+  readUrl            String?             @db.Text
   deletedAt          DateTime?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
@@ -251,6 +252,7 @@ model LibraryCollection {
   availableQuantity Int         @default(1)
   shelfLocation     String?
   category          String?
+  readUrl           String?     @db.Text
   isAvailable       Boolean     @default(true)
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt

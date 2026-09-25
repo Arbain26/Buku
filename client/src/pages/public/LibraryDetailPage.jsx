@@ -11,6 +11,7 @@ import {
   ChevronRight,
   BookMarked,
   Info,
+  ExternalLink,
 } from 'lucide-react';
 import { libraryService } from '../../services/dataServices';
 import { useLocation } from '../../contexts/LocationContext';
@@ -239,6 +240,11 @@ export const LibraryDetailPage = () => {
                     <span className="absolute top-2 left-2 text-[10px] font-bold bg-white/95 px-2 py-0.5 rounded-md text-[#0F766E] border border-teal-200 shadow-xs">
                       {col.category}
                     </span>
+                    {col.readUrl && (
+                      <span className="absolute top-2 right-2 text-[10px] font-bold bg-emerald-600 text-white px-2 py-0.5 rounded-md shadow-xs flex items-center gap-1">
+                        <BookOpen className="w-3 h-3" /> Online
+                      </span>
+                    )}
                   </div>
 
                   <h4 className="font-bold text-xs sm:text-sm text-[#17211D] line-clamp-1">
@@ -263,6 +269,18 @@ export const LibraryDetailPage = () => {
                 </div>
 
                 <div className="pt-3 mt-3 border-t border-gray-100 space-y-2">
+                  {col.readUrl && (
+                    <a
+                      href={col.readUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-xl bg-[#075E54] hover:bg-[#05473F] text-white text-xs font-bold transition shadow-xs"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Baca Online Sekarang
+                    </a>
+                  )}
+
                   <Button
                     size="sm"
                     onClick={() => handleOpenBorrow(col)}
@@ -270,7 +288,7 @@ export const LibraryDetailPage = () => {
                     className="w-full bg-[#0F766E] hover:bg-[#115E59] text-white text-xs font-bold gap-1.5 shadow-xs"
                   >
                     <BookMarked className="w-3.5 h-3.5" />
-                    {col.availableStock > 0 ? 'Ajukan Peminjaman' : 'Stok Sedang Kosong'}
+                    {col.availableStock > 0 ? 'Ajukan Peminjaman Fisik' : 'Stok Fisik Kosong'}
                   </Button>
 
                   <Link

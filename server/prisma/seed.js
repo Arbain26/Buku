@@ -617,14 +617,14 @@ async function main() {
 
   // Koleksi Buku Perpustakaan 1
   const lib1Collections = [
-    { bookId: createdBooks[0].id, callNumber: '150.1 MAN f', quantity: 5, availableQuantity: 4, shelfLocation: 'Rak Fiksi & Motivasi A1' },
-    { bookId: createdBooks[1].id, callNumber: '899.221 TOE b', quantity: 4, availableQuantity: 3, shelfLocation: 'Rak Sastra Nusantara B2' },
+    { bookId: createdBooks[0].id, callNumber: '150.1 MAN f', quantity: 5, availableQuantity: 4, shelfLocation: 'Rak Fiksi & Motivasi A1', readUrl: 'https://repository.uinjkt.ac.id/dspace/bitstream/123456789/filosofi-teras.pdf' },
+    { bookId: createdBooks[1].id, callNumber: '899.221 TOE b', quantity: 4, availableQuantity: 3, shelfLocation: 'Rak Sastra Nusantara B2', readUrl: 'https://pustaka.kemdikbud.go.id/koleksi/bumi-manusia' },
     { bookId: createdBooks[3].id, callNumber: '899.221 CHU l', quantity: 3, availableQuantity: 2, shelfLocation: 'Rak Sastra Kontemporer B3' },
-    { bookId: createdBooks[5].id, callNumber: '297.122 SHI t', quantity: 6, availableQuantity: 5, shelfLocation: 'Rak Agama & Tafsir C1' },
-    { bookId: createdBooks[6].id, callNumber: '302.23 SHI l', quantity: 4, availableQuantity: 4, shelfLocation: 'Rak Literasi Digital D1' },
-    { bookId: createdBooks[8].id, callNumber: '959.8 MAP s', quantity: 8, availableQuantity: 7, shelfLocation: 'Rak Khusus Sejarah Sidrap S1' },
+    { bookId: createdBooks[5].id, callNumber: '297.122 SHI t', quantity: 6, availableQuantity: 5, shelfLocation: 'Rak Agama & Tafsir C1', readUrl: 'https://qurancentre.id/baca/tafsir-al-mishbah' },
+    { bookId: createdBooks[6].id, callNumber: '302.23 SHI l', quantity: 4, availableQuantity: 4, shelfLocation: 'Rak Literasi Digital D1', readUrl: 'https://literasidigital.id/modul-literasi' },
+    { bookId: createdBooks[8].id, callNumber: '959.8 MAP s', quantity: 8, availableQuantity: 7, shelfLocation: 'Rak Khusus Sejarah Sidrap S1', readUrl: 'https://sulselprov.go.id/dokumen/sejarah-sidrap-lengkap.pdf' },
     { bookId: createdBooks[9].id, callNumber: '633.1 FUA p', quantity: 5, availableQuantity: 5, shelfLocation: 'Rak Pertanian Terapan P1' },
-    { bookId: createdBooks[13].id, callNumber: '005.13 MAN d', quantity: 3, availableQuantity: 2, shelfLocation: 'Rak Teknologi & Komputer T1' },
+    { bookId: createdBooks[13].id, callNumber: '005.13 MAN d', quantity: 3, availableQuantity: 2, shelfLocation: 'Rak Teknologi & Komputer T1', readUrl: 'https://it-ebooks.info/book/dasar-pemrograman' },
   ];
 
   for (const c of lib1Collections) {
@@ -636,6 +636,7 @@ async function main() {
         quantity: c.quantity,
         availableQuantity: c.availableQuantity,
         shelfLocation: c.shelfLocation,
+        readUrl: c.readUrl || null,
         isAvailable: c.availableQuantity > 0,
       },
     });
@@ -696,11 +697,11 @@ async function main() {
 
   // Koleksi Perpustakaan 2
   const lib2Collections = [
-    { bookId: createdBooks[2].id, callNumber: '899.221 HIR l', quantity: 3, availableQuantity: 3, shelfLocation: 'Rak Remaja' },
+    { bookId: createdBooks[2].id, callNumber: '899.221 HIR l', quantity: 3, availableQuantity: 3, shelfLocation: 'Rak Remaja', readUrl: 'https://pustaka.kemdikbud.go.id/koleksi/laskar-pelangi' },
     { bookId: createdBooks[4].id, callNumber: '899.221 FUA n', quantity: 2, availableQuantity: 2, shelfLocation: 'Rak Remaja' },
-    { bookId: createdBooks[9].id, callNumber: '633.1 FUA p', quantity: 4, availableQuantity: 3, shelfLocation: 'Rak Desa & Tani' },
+    { bookId: createdBooks[9].id, callNumber: '633.1 FUA p', quantity: 4, availableQuantity: 3, shelfLocation: 'Rak Desa & Tani', readUrl: 'https://pertanian.go.id/buku-panduan-padi.pdf' },
     { bookId: createdBooks[12].id, callNumber: '398.2 HIR k', quantity: 6, availableQuantity: 5, shelfLocation: 'Pojok Baca Anak' },
-    { bookId: createdBooks[14].id, callNumber: '028 SHI g', quantity: 2, availableQuantity: 2, shelfLocation: 'Rak Komunitas' },
+    { bookId: createdBooks[14].id, callNumber: '028 SHI g', quantity: 2, availableQuantity: 2, shelfLocation: 'Rak Komunitas', readUrl: 'https://perpusnas.go.id/gerakan-literasi-rakyat' },
   ];
   for (const c of lib2Collections) {
     await prisma.libraryCollection.create({
@@ -711,6 +712,7 @@ async function main() {
         quantity: c.quantity,
         availableQuantity: c.availableQuantity,
         shelfLocation: c.shelfLocation,
+        readUrl: c.readUrl || null,
         isAvailable: c.availableQuantity > 0,
       },
     });

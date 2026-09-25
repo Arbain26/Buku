@@ -390,17 +390,31 @@ export const UserDashboardPage = () => {
                     </div>
                   </div>
 
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold self-start sm:self-center ${
-                      b.status === 'BORROWED' || b.status === 'APPROVED'
-                        ? 'bg-blue-50 text-blue-800 border border-blue-200'
-                        : b.status === 'PENDING'
-                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                        : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                    }`}
-                  >
-                    {b.status === 'APPROVED' ? 'Disetujui' : b.status === 'PENDING' ? 'Menunggu Verifikasi' : b.status}
-                  </span>
+                  <div className="flex items-center gap-2 self-start sm:self-center">
+                    {b.readUrl && (
+                      <a
+                        href={b.readUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#E8F3EF] hover:bg-emerald-100 text-[#075E54] border border-[#cbe1d7] transition shadow-2xs"
+                        title="Buka tautan baca digital buku ini"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Baca Online
+                      </a>
+                    )}
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                        b.status === 'BORROWED' || b.status === 'APPROVED'
+                          ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                          : b.status === 'PENDING'
+                          ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                          : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      }`}
+                    >
+                      {b.status === 'APPROVED' ? 'Disetujui' : b.status === 'PENDING' ? 'Menunggu Verifikasi' : b.status}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>

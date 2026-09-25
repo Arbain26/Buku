@@ -127,7 +127,8 @@ class LibraryService {
       totalStock: c.quantity,
       availableStock: c.availableQuantity,
       locationShelf: c.shelfLocation,
-      isAvailable: c.availableQuantity > 0,
+      readUrl: c.readUrl || c.book.readUrl || null,
+      isAvailable: c.availableQuantity > 0 || !!(c.readUrl || c.book.readUrl),
     }));
 
     return {
@@ -226,7 +227,7 @@ class LibraryService {
     });
   }
 
-  async addLibraryCollection(libraryId, { bookId, callNumber, quantity = 1, shelfLocation, category }) {
+  async addLibraryCollection(libraryId, { bookId, callNumber, quantity = 1, shelfLocation, category, readUrl }) {
     const qty = parseInt(quantity);
     return prisma.libraryCollection.upsert({
       where: {
@@ -241,7 +242,8 @@ class LibraryService {
         availableQuantity: qty,
         shelfLocation,
         category,
-        isAvailable: qty > 0,
+        readUrl: readUrl !== undefined ? (readUrl ? readUrl.trim() : null) : undefined,
+        isAvailable: qty > 0 || !!readUrl,
       },
       create: {
         libraryId: parseInt(libraryId),
@@ -251,13 +253,14 @@ class LibraryService {
         availableQuantity: qty,
         shelfLocation,
         category,
-        isAvailable: qty > 0,
+        readUrl: readUrl ? readUrl.trim() : null,
+        isAvailable: qty > 0 || !!readUrl,
       },
       include: { book: true },
     });
   }
 
-  async updateLibraryCollection(collectionId, { callNumber, quantity, availableQuantity, shelfLocation, category, isAvailable }) {
+  async updateLibraryCollection(collectionId, { callNumber, quantity, availableQuantity, shelfLocation, category, isAvailable, readUrl }) {
     const updateData = {};
     if (callNumber !== undefined) updateData.callNumber = callNumber;
     if (quantity !== undefined) updateData.quantity = parseInt(quantity);
@@ -267,6 +270,7 @@ class LibraryService {
     }
     if (shelfLocation !== undefined) updateData.shelfLocation = shelfLocation;
     if (category !== undefined) updateData.category = category;
+    if (readUrl !== undefined) updateData.readUrl = readUrl ? readUrl.trim() : null;
     if (isAvailable !== undefined) updateData.isAvailable = isAvailable;
 
     return prisma.libraryCollection.update({

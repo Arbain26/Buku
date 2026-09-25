@@ -63,6 +63,7 @@ const addInventory = async (req, res, next) => {
       callNumber,
       shelfLocation,
       itemCategory,
+      readUrl,
     } = req.body;
 
     const coverImage = req.file ? `/uploads/${req.file.filename}` : (req.body.coverImage || null);
@@ -143,6 +144,7 @@ const addInventory = async (req, res, next) => {
         quantity: resolvedQuantity,
         shelfLocation: resolvedShelf,
         category: itemCategory,
+        readUrl: readUrl ? readUrl.trim() : null,
       });
 
       return successResponse(res, 'Koleksi buku berhasil ditambahkan ke perpustakaan.', collection, 201);
@@ -180,6 +182,7 @@ const updateInventory = async (req, res, next) => {
       category,
       itemCategory,
       condition,
+      readUrl,
     } = req.body;
 
     const coverImage = req.file ? `/uploads/${req.file.filename}` : (req.body.coverImage !== undefined ? req.body.coverImage : undefined);
@@ -213,6 +216,7 @@ const updateInventory = async (req, res, next) => {
         availableQuantity,
         shelfLocation: shelfLocation || locationShelf,
         category: category || itemCategory,
+        readUrl,
       });
     } else {
       return errorResponse(res, 'Tipe mitra tidak valid.', 400);
@@ -230,6 +234,7 @@ const updateInventory = async (req, res, next) => {
       if (publishYear !== undefined) bookUpdateData.publishYear = publishYear ? { set: parseInt(publishYear) } : null;
       if (pages !== undefined) bookUpdateData.pages = pages ? { set: parseInt(pages) } : null;
       if (language !== undefined) bookUpdateData.language = language ? { set: language } : null;
+      if (readUrl !== undefined) bookUpdateData.readUrl = readUrl ? { set: readUrl.trim() } : null;
       if (req.file) {
         bookUpdateData.coverImage = { set: `/uploads/${req.file.filename}` };
       } else if (coverImage) {

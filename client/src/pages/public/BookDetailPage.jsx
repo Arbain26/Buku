@@ -296,6 +296,18 @@ export const BookDetailPage = () => {
             </div>
           </div>
 
+          {(book.readUrl || book.digitalReadUrl || book.libraries?.find((l) => l.readUrl)?.readUrl) && (
+            <a
+              href={book.readUrl || book.digitalReadUrl || book.libraries?.find((l) => l.readUrl)?.readUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold shadow-md transition text-xs sm:text-sm"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Baca Buku Online Sekarang
+            </a>
+          )}
+
           <Button
             size="lg"
             onClick={scrollToAvailability}
@@ -308,9 +320,17 @@ export const BookDetailPage = () => {
         {/* Col 2: Book Info (5 cols) */}
         <div className="lg:col-span-5 space-y-5">
           <div>
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#E8F3EF] text-[#075E54] border border-[#cbe1d7] mb-2">
-              {categoryName || 'Umum'}
-            </span>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-[#E8F3EF] text-[#075E54] border border-[#cbe1d7]">
+                {categoryName || 'Umum'}
+              </span>
+              {(book.hasDigitalRead || book.readUrl || book.digitalReadUrl || book.libraries?.some((l) => l.readUrl)) && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-teal-100 text-teal-800 border border-teal-200">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Tersedia Baca Online (Link)
+                </span>
+              )}
+            </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#17211D] tracking-tight leading-snug">
               {book.title}
             </h1>
@@ -454,12 +474,36 @@ export const BookDetailPage = () => {
                     <div className="text-[11px] text-[#66736D] space-y-0.5">
                       <p className="flex items-center gap-1 text-[#075E54] font-semibold">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        Tersedia {lib.availableStock ?? lib.availableQuantity ?? 1} eksemplar
+                        Tersedia {lib.availableStock ?? lib.availableQuantity ?? 1} eksemplar fisik
                       </p>
                       <p className="text-gray-400 text-[10px]">
                         Peminjaman publik gratis selama 7 - 14 hari
                       </p>
                     </div>
+
+                    {lib.readUrl && (
+                      <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-xl p-2.5 space-y-1.5">
+                        <div className="flex items-center justify-between text-emerald-800 text-[11px] font-bold">
+                          <span className="flex items-center gap-1">
+                            <BookOpen className="w-3.5 h-3.5 text-[#075E54]" />
+                            Tersedia Versi Digital
+                          </span>
+                          <span className="text-[9px] bg-emerald-600 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">E-Book</span>
+                        </div>
+                        <p className="text-[10px] text-emerald-700 leading-snug">
+                          Perpustakaan menyediakan tautan untuk membaca buku ini secara online.
+                        </p>
+                        <a
+                          href={lib.readUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-lg bg-[#075E54] hover:bg-[#05473F] text-white text-xs font-bold transition shadow-xs"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Baca Online Sekarang
+                        </a>
+                      </div>
+                    )}
 
                     <Button
                       size="sm"
@@ -467,7 +511,7 @@ export const BookDetailPage = () => {
                       className="w-full text-xs font-bold border-[#0F766E] text-[#0F766E] hover:bg-[#E8F3EF]"
                       onClick={() => handleOpenBorrowModal(lib)}
                     >
-                      Ajukan Peminjaman
+                      Ajukan Peminjaman Fisik
                     </Button>
                   </div>
                 ))

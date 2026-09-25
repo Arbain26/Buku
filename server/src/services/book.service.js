@@ -57,7 +57,7 @@ class BookService {
           },
           libraryCollections: {
             where: { isAvailable: true },
-            select: { availableQuantity: true },
+            select: { availableQuantity: true, readUrl: true },
           },
           _count: {
             select: { reviews: true },
@@ -75,7 +75,9 @@ class BookService {
           ? Math.min(...b.storeProducts.map((sp) => Number(sp.price)))
           : null;
       const isAvailableInStore = b.storeProducts.some((sp) => sp.stock > 0);
-      const isAvailableInLibrary = b.libraryCollections.some((lc) => lc.availableQuantity > 0);
+      const isAvailableInLibrary = b.libraryCollections.some((lc) => lc.availableQuantity > 0 || !!lc.readUrl);
+      const hasDigitalRead = !!(b.readUrl || b.libraryCollections.some((lc) => !!lc.readUrl));
+      const readUrl = b.readUrl || (b.libraryCollections.find((lc) => lc.readUrl)?.readUrl) || null;
 
       return {
         id: b.id,
@@ -95,6 +97,8 @@ class BookService {
         minPrice,
         isAvailableInStore,
         isAvailableInLibrary,
+        hasDigitalRead,
+        readUrl,
       };
     });
 
@@ -185,7 +189,11 @@ class BookService {
       shelfLocation: lc.shelfLocation,
       totalQuantity: lc.quantity,
       availableQuantity: lc.availableQuantity,
+      readUrl: lc.readUrl || book.readUrl || null,
     }));
+
+    const digitalReadUrl = book.readUrl || (book.libraryCollections.find((lc) => lc.readUrl)?.readUrl) || null;
+    const hasDigitalRead = !!digitalReadUrl;
 
     return {
       id: book.id,
@@ -208,6 +216,9 @@ class BookService {
       stores,
       libraries,
       reviews: book.reviews,
+      readUrl: digitalReadUrl,
+      digitalReadUrl,
+      hasDigitalRead,
     };
   }
 

@@ -37,11 +37,11 @@ cd /var/www/Buku/server
 npm install
 ```
 
-### 2. Update Database Prisma (Opsional)
-Jalankan langkah ini **HANYA JIKA** Anda mengubah file `server/prisma/schema.prisma` (misal menambah tabel baru):
+### 2. Update Database Prisma (Wajib jika ada perubahan skema database)
+Jalankan langkah ini jika terdapat perubahan file `server/prisma/schema.prisma` (misal penambahan kolom `readUrl`):
 ```bash
 npx prisma generate
-npx prisma migrate deploy
+npx prisma db push
 ```
 
 ### 3. Restart Aplikasi Backend
@@ -110,5 +110,6 @@ sudo systemctl restart nginx
 **Ringkasan Alur Cepat (Cheat Sheet):**
 1. `cd /var/www/Buku`
 2. `git pull origin main`
-3. Frontend: `cd client` -> `npm run build`
-4. Backend: `cd server` -> `pm2 restart mabbaca-backend`
+3. Database (skema baru): `cd server` -> `npx prisma db push && npx prisma generate`
+4. Frontend: `cd ../client` -> `npm run build`
+5. Backend: `cd ../server` -> `pm2 restart mabbaca-backend`

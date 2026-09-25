@@ -336,6 +336,7 @@ class MitraService {
           totalStock: c.quantity,
           availableStock: c.availableQuantity,
           locationShelf: c.shelfLocation,
+          readUrl: c.readUrl || c.book.readUrl || null,
           isAvailable: c.isAvailable,
         })),
         borrowings,
