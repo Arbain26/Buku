@@ -1,0 +1,11 @@
+# robots.txt untuk MABBACA
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /profile/
+Disallow: /mitra/dashboard/
+Disallow: /api/
+
+# Lokasi Sitemap
+Sitemap: https://mabbaca-sidrap.marvx.my.id/sitemap.xml
